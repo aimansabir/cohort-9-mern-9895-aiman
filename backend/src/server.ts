@@ -76,6 +76,14 @@ async function start(): Promise<void> {
     return;
   }
 
+  // A signal can arrive while the readiness check above is still pending. If
+  // shutdown already ran, binding a port now would leave a listener behind
+  // that nothing is left to close.
+  if (isShuttingDown) {
+    logger.warn('Shutdown started during startup, not binding the HTTP server');
+    return;
+  }
+
   const app = createApp();
   const server = app.listen(env.port, () => {
     logger.info({ port: env.port, environment: env.nodeEnv }, 'HTTP server listening');
