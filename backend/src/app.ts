@@ -6,6 +6,7 @@ import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
+import authRoutes from './routes/authRoutes';
 import healthRoutes from './routes/healthRoutes';
 import { AppError } from './utils/AppError';
 
@@ -40,6 +41,7 @@ export function createApp(): Application {
   app.use(express.urlencoded({ extended: true, limit: BODY_SIZE_LIMIT }));
 
   app.use('/api/health', healthRoutes);
+  app.use('/api/auth', authRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

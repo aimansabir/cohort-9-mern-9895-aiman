@@ -1,24 +1,39 @@
-import mysql, { type Pool, type PoolConnection, type PoolOptions } from 'mysql2/promise';
+import mysql, {
+  type ConnectionOptions,
+  type Pool,
+  type PoolConnection,
+  type PoolOptions,
+} from 'mysql2/promise';
 
 import { logger } from '../utils/logger';
 import { env } from './env';
 
 let pool: Pool | undefined;
 
-function buildPoolOptions(): PoolOptions {
+/**
+ * Credentials shared by the application pool and the migration runner, so the
+ * database connection is configured in exactly one place.
+ */
+export function buildConnectionOptions(): ConnectionOptions {
   return {
     host: env.database.host,
     port: env.database.port,
     user: env.database.user,
     password: env.database.password,
     database: env.database.name,
+    // Repositories bind values with `:name` placeholders; SQL is never built
+    // by string concatenation.
+    namedPlaceholders: true,
+  };
+}
+
+function buildPoolOptions(): PoolOptions {
+  return {
+    ...buildConnectionOptions(),
     waitForConnections: true,
     connectionLimit: env.database.connectionLimit,
     queueLimit: 0,
     enableKeepAlive: true,
-    // Repositories added in later phases bind values with `?` or `:name`
-    // placeholders; SQL is never built by string concatenation.
-    namedPlaceholders: true,
   };
 }
 
