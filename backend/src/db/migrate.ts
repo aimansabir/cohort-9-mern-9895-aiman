@@ -44,10 +44,15 @@ function buildMigrationLockName(databaseName: string): string {
 }
 
 async function acquireMigrationLock(connection: Connection, lockName: string): Promise<void> {
-  const [rows] = await connection.query<AdvisoryLockRow[]>(
-    'SELECT GET_LOCK(:lockName, :timeoutSeconds) AS lockAcquired',
-    { lockName, timeoutSeconds: MIGRATION_LOCK_TIMEOUT_SECONDS },
-  );
+  let rows: AdvisoryLockRow[];
+  try {
+    [rows] = await connection.query<AdvisoryLockRow[]>(
+      'SELECT GET_LOCK(:lockName, :timeoutSeconds) AS lockAcquired',
+      { lockName, timeoutSeconds: MIGRATION_LOCK_TIMEOUT_SECONDS },
+    );
+  } catch (error) {
+    throw new Error('Failed to acquire migration advisory lock', { cause: error });
+  }
 
   const lockAcquired = rows[0]?.lockAcquired;
   if (lockAcquired === 1) {
@@ -64,10 +69,15 @@ async function acquireMigrationLock(connection: Connection, lockName: string): P
 }
 
 async function releaseMigrationLock(connection: Connection, lockName: string): Promise<void> {
-  const [rows] = await connection.query<AdvisoryLockReleaseRow[]>(
-    'SELECT RELEASE_LOCK(:lockName) AS lockReleased',
-    { lockName },
-  );
+  let rows: AdvisoryLockReleaseRow[];
+  try {
+    [rows] = await connection.query<AdvisoryLockReleaseRow[]>(
+      'SELECT RELEASE_LOCK(:lockName) AS lockReleased',
+      { lockName },
+    );
+  } catch (error) {
+    throw new Error('Failed to release migration advisory lock', { cause: error });
+  }
 
   if (rows[0]?.lockReleased !== 1) {
     throw new Error('MySQL did not release the migration advisory lock');
@@ -154,7 +164,14 @@ async function runMigrations(): Promise<void> {
           process.exitCode = 1;
         }
       } finally {
-        await connection.end();
+        try {
+          await connection.end();
+        } catch (error) {
+          logger.error({ err: error }, 'Failed to close migration database connection');
+          if (process.exitCode === undefined || process.exitCode === 0) {
+            process.exitCode = 1;
+          }
+        }
       }
     }
   }
