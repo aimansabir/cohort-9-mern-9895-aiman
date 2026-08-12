@@ -73,7 +73,15 @@ export async function createUser(user: NewUser): Promise<UserRecord> {
     throw toDomainError(error, 'createUser');
   }
 
-  const created = await findUserById(insertId);
+  let created: UserRecord | undefined;
+  try {
+    created = await findUserById(insertId);
+  } catch (error) {
+    throw new Error(`User ${String(insertId)} was inserted but could not be read back`, {
+      cause: error,
+    });
+  }
+
   if (created === undefined) {
     throw new Error(`User ${String(insertId)} could not be read back after insertion`);
   }
