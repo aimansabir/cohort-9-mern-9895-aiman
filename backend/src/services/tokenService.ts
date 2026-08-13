@@ -11,6 +11,8 @@ export function signAccessToken(userId: number): string {
   return jwt.sign({}, env.jwt.secret, {
     algorithm: 'HS256',
     subject: String(userId),
+    issuer: env.jwt.issuer,
+    audience: env.jwt.audience,
     expiresIn: env.jwt.expiresInSeconds,
   });
 }
@@ -20,6 +22,8 @@ export function verifyAccessToken(token: string): AccessTokenClaims {
   try {
     payload = jwt.verify(token, env.jwt.secret, {
       algorithms: ['HS256'],
+      issuer: env.jwt.issuer,
+      audience: env.jwt.audience,
     });
   } catch {
     throw new AppError('Authentication token is invalid or expired', 401);

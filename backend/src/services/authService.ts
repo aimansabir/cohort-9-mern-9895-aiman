@@ -4,7 +4,7 @@ import { createUser, findUserByEmail, findUserById } from '../repositories/userR
 import type { PublicUser, UserRecord } from '../types/user';
 import { AppError } from '../utils/AppError';
 import type { LoginInput, SignupInput } from '../validation/authSchemas';
-import { hashPassword, verifyPassword } from './passwordService';
+import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from './passwordService';
 import { signAccessToken } from './tokenService';
 
 export interface AuthResult {
@@ -39,6 +39,8 @@ export async function logIn(log: Logger, input: LoginInput): Promise<AuthResult>
   const user = await findUserByEmail(input.email);
 
   if (user === undefined) {
+    // still run bcrypt so this path costs the same as a real check
+    await verifyPassword(input.password, DUMMY_PASSWORD_HASH);
     throw new AppError(INVALID_CREDENTIALS, 401);
   }
 

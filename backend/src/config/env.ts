@@ -61,7 +61,15 @@ function parseJwtExpiry(value: string): number {
   const amount = Number(match[1]);
   const unit = match[2] || 's';
   const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
-  return amount * (multipliers[unit] ?? 1);
+  const seconds = amount * (multipliers[unit] ?? 1);
+
+  // 0 would make the token expire straight away, and very big numbers stop
+  // being exact once they go past Number.MAX_SAFE_INTEGER
+  if (!Number.isSafeInteger(seconds) || seconds < 1) {
+    throw new Error(`JWT_EXPIRES_IN must be greater than 0: ${value}`);
+  }
+
+  return seconds;
 }
 
 function loadConfig(): AppConfig {
@@ -70,10 +78,13 @@ function loadConfig(): AppConfig {
     : 'development') as NodeEnvironment;
   const isProduction = nodeEnv === 'production';
 
-  const logLevelRaw = readEnv('LOG_LEVEL', isProduction ? 'info' : 'debug');
+  // fall back to the default for this environment, not always debug —
+  // otherwise a typo in LOG_LEVEL would turn on debug logs in production
+  const defaultLogLevel: LogLevel = isProduction ? 'info' : 'debug';
+  const logLevelRaw = readEnv('LOG_LEVEL', defaultLogLevel);
   const logLevel = (LOG_LEVELS.includes(logLevelRaw as LogLevel)
     ? logLevelRaw
-    : 'debug') as LogLevel;
+    : defaultLogLevel) as LogLevel;
 
   const jwtSecret = readEnv('JWT_SECRET');
   if (jwtSecret.length < 32) {

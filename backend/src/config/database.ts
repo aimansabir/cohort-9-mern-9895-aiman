@@ -1,6 +1,7 @@
 import mysql, {
   type ConnectionOptions,
   type Pool,
+  type PoolConnection,
   type PoolOptions,
 } from 'mysql2/promise';
 
@@ -42,11 +43,17 @@ export function getPool(): Pool {
 }
 
 export async function pingDatabase(): Promise<void> {
-  const connection = await getPool().getConnection();
+  // getConnection() can fail too, so it goes inside the try
+  let connection: PoolConnection | undefined;
+
   try {
+    connection = await getPool().getConnection();
     await connection.ping();
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to connect to MySQL');
+    throw error;
   } finally {
-    connection.release();
+    connection?.release();
   }
 }
 
@@ -54,6 +61,12 @@ export async function closeDatabasePool(): Promise<void> {
   if (pool === undefined) return;
   const closing = pool;
   pool = undefined;
-  await closing.end();
-  logger.info('MySQL pool closed');
+
+  try {
+    await closing.end();
+    logger.info('MySQL pool closed');
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to close MySQL pool');
+    throw error;
+  }
 }
