@@ -5,12 +5,6 @@ import { getUserProfile, logIn, signUp } from '../services/authService';
 import { loginSchema, signupSchema } from '../validation/authSchemas';
 import { parseBody } from '../validation/parseBody';
 
-/**
- * Each handler catches and forwards to `next` explicitly. Express 5 would
- * forward a rejected promise on its own, but being explicit keeps the error path
- * visible and independent of that behaviour.
- */
-
 export const postSignup: RequestHandler = async (req, res, next): Promise<void> => {
   try {
     const result = await signUp(req.log, parseBody(signupSchema, req.body));
@@ -51,18 +45,15 @@ export const getMe: RequestHandler = async (req, res, next): Promise<void> => {
   }
 };
 
-/**
- * Bearer tokens are stateless, so there is no server-side session to destroy.
- * The endpoint records the activity and confirms the intent; the client is
- * responsible for discarding its copy of the token.
- */
+// stateless JWT — there's no server-side session to destroy,
+// the client just needs to delete its token
 export const postLogout: RequestHandler = (req, res, next): void => {
   try {
     const { id } = requireAuthenticatedUser(req);
     req.log.info({ userId: id }, 'User logged out');
     res.status(200).json({
       success: true,
-      message: 'Logged out successfully. Discard the access token on the client.',
+      message: 'Logged out successfully',
     });
   } catch (error) {
     next(error);
