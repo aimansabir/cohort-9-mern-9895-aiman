@@ -1,7 +1,5 @@
 import dotenv from 'dotenv';
 
-// `quiet` suppresses dotenv's own banner so stdout carries nothing but the
-// structured Pino stream.
 dotenv.config({ quiet: true });
 
 export type NodeEnvironment = 'development' | 'test' | 'production';
@@ -16,6 +14,13 @@ export interface DatabaseConfig {
   readonly connectionLimit: number;
 }
 
+export interface JwtConfig {
+  readonly secret: string;
+  readonly expiresInSeconds: number;
+  readonly issuer: string;
+  readonly audience: string;
+}
+
 export interface AppConfig {
   readonly nodeEnv: NodeEnvironment;
   readonly isProduction: boolean;
@@ -24,124 +29,93 @@ export interface AppConfig {
   readonly logLevel: LogLevel;
   readonly allowedOrigins: readonly string[];
   readonly database: DatabaseConfig;
+  readonly jwt: JwtConfig;
 }
 
 const NODE_ENVIRONMENTS: readonly NodeEnvironment[] = ['development', 'test', 'production'];
 const LOG_LEVELS: readonly LogLevel[] = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
 
-const DEFAULT_PORT = 5000;
-const DEFAULT_DB_PORT = 3306;
-const DEFAULT_DB_CONNECTION_LIMIT = 10;
-const DEFAULT_FRONTEND_URL = 'http://localhost:5173';
-const MAX_TCP_PORT = 65535;
-
-/** Variables that must be supplied before the process can start. */
-const missingKeys: string[] = [];
-/** Variables that were supplied but could not be parsed. */
-const invalidKeys: string[] = [];
-
-function read(key: string): string | undefined {
+function readEnv(key: string, fallback?: string): string {
   const value = process.env[key]?.trim();
-  return value && value.length > 0 ? value : undefined;
+  if (value && value.length > 0) return value;
+  if (fallback !== undefined) return fallback;
+  throw new Error(`Missing required environment variable: ${key}`);
 }
 
-function readRequiredString(key: string): string {
-  const value = read(key);
-  if (value === undefined) {
-    missingKeys.push(key);
-    return '';
-  }
-  return value;
-}
-
-function readOptionalString(key: string, fallback: string): string {
-  return read(key) ?? fallback;
-}
-
-function readPositiveInteger(key: string, fallback: number, max: number): number {
-  const raw = read(key);
-  if (raw === undefined) {
-    return fallback;
-  }
+function readInt(key: string, fallback: number): number {
+  const raw = process.env[key]?.trim();
+  if (!raw) return fallback;
   const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > max) {
-    invalidKeys.push(`${key} must be an integer between 1 and ${max}`);
-    return fallback;
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${key} must be a positive integer`);
   }
   return parsed;
 }
 
-function readNodeEnvironment(): NodeEnvironment {
-  const raw = readOptionalString('NODE_ENV', 'development');
-  const match = NODE_ENVIRONMENTS.find((candidate) => candidate === raw);
-  if (match === undefined) {
-    invalidKeys.push(`NODE_ENV must be one of: ${NODE_ENVIRONMENTS.join(', ')}`);
-    return 'development';
+function parseJwtExpiry(value: string): number {
+  // support formats like "1d", "12h", "30m", or just plain seconds
+  const match = /^(\d+)([smhd])?$/.exec(value);
+  if (!match) {
+    throw new Error(`Invalid JWT_EXPIRES_IN value: ${value}`);
   }
-  return match;
-}
+  const amount = Number(match[1]);
+  const unit = match[2] || 's';
+  const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
+  const seconds = amount * (multipliers[unit] ?? 1);
 
-function readLogLevel(isProduction: boolean): LogLevel {
-  const fallback: LogLevel = isProduction ? 'info' : 'debug';
-  const raw = read('LOG_LEVEL');
-  if (raw === undefined) {
-    return fallback;
+  // 0 would make the token expire straight away, and very big numbers stop
+  // being exact once they go past Number.MAX_SAFE_INTEGER
+  if (!Number.isSafeInteger(seconds) || seconds < 1) {
+    throw new Error(`JWT_EXPIRES_IN must be greater than 0: ${value}`);
   }
-  const match = LOG_LEVELS.find((candidate) => candidate === raw);
-  if (match === undefined) {
-    invalidKeys.push(`LOG_LEVEL must be one of: ${LOG_LEVELS.join(', ')}`);
-    return fallback;
-  }
-  return match;
-}
 
-function readAllowedOrigins(): string[] {
-  return readOptionalString('FRONTEND_URL', DEFAULT_FRONTEND_URL)
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
+  return seconds;
 }
 
 function loadConfig(): AppConfig {
-  const nodeEnv = readNodeEnvironment();
+  const nodeEnv = (NODE_ENVIRONMENTS.includes(readEnv('NODE_ENV', 'development') as NodeEnvironment)
+    ? readEnv('NODE_ENV', 'development')
+    : 'development') as NodeEnvironment;
   const isProduction = nodeEnv === 'production';
 
-  // An empty MySQL password is common on local installs, so it is only
-  // mandatory in production.
-  const databasePassword = isProduction
-    ? readRequiredString('DB_PASSWORD')
-    : (process.env['DB_PASSWORD'] ?? '');
+  // fall back to the default for this environment, not always debug —
+  // otherwise a typo in LOG_LEVEL would turn on debug logs in production
+  const defaultLogLevel: LogLevel = isProduction ? 'info' : 'debug';
+  const logLevelRaw = readEnv('LOG_LEVEL', defaultLogLevel);
+  const logLevel = (LOG_LEVELS.includes(logLevelRaw as LogLevel)
+    ? logLevelRaw
+    : defaultLogLevel) as LogLevel;
 
-  const config: AppConfig = {
+  const jwtSecret = readEnv('JWT_SECRET');
+  if (jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters');
+  }
+
+  const frontendUrl = readEnv('FRONTEND_URL', 'http://localhost:5173');
+  const allowedOrigins = frontendUrl.split(',').map((o) => o.trim()).filter(Boolean);
+
+  return {
     nodeEnv,
     isProduction,
     isDevelopment: nodeEnv === 'development',
-    port: readPositiveInteger('PORT', DEFAULT_PORT, MAX_TCP_PORT),
-    logLevel: readLogLevel(isProduction),
-    allowedOrigins: readAllowedOrigins(),
+    port: readInt('PORT', 5000),
+    logLevel,
+    allowedOrigins,
     database: {
-      host: readOptionalString('DB_HOST', 'localhost'),
-      port: readPositiveInteger('DB_PORT', DEFAULT_DB_PORT, MAX_TCP_PORT),
-      user: readRequiredString('DB_USER'),
-      password: databasePassword,
-      name: readRequiredString('DB_NAME'),
-      connectionLimit: readPositiveInteger('DB_CONNECTION_LIMIT', DEFAULT_DB_CONNECTION_LIMIT, 100),
+      host: readEnv('DB_HOST', 'localhost'),
+      port: readInt('DB_PORT', 3306),
+      user: readEnv('DB_USER'),
+      password: isProduction ? readEnv('DB_PASSWORD') : (process.env['DB_PASSWORD'] ?? ''),
+      name: readEnv('DB_NAME'),
+      connectionLimit: readInt('DB_CONNECTION_LIMIT', 10),
+    },
+    jwt: {
+      secret: jwtSecret,
+      expiresInSeconds: parseJwtExpiry(readEnv('JWT_EXPIRES_IN', '1d')),
+      issuer: 'notes-api',
+      audience: 'notes-app',
     },
   };
-
-  if (missingKeys.length > 0 || invalidKeys.length > 0) {
-    const problems = [
-      missingKeys.length > 0 ? `missing: ${missingKeys.join(', ')}` : undefined,
-      invalidKeys.length > 0 ? `invalid: ${invalidKeys.join('; ')}` : undefined,
-    ].filter((problem): problem is string => problem !== undefined);
-
-    throw new Error(
-      `Invalid environment configuration (${problems.join(' | ')}). ` +
-        'Copy backend/.env.example to backend/.env and fill in the values.',
-    );
-  }
-
-  return config;
 }
 
 export const env: AppConfig = loadConfig();

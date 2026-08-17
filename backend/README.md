@@ -1,63 +1,53 @@
-# Notes API — backend
+# Notes API — Backend
 
-Express + TypeScript foundation for the Notes Management application.
-
-## Requirements
-
-- Node.js 20 or newer
-- MySQL 8 (running locally or reachable over the network)
+Express + TypeScript backend for the Notes Management app.
 
 ## Setup
 
 ```bash
 cd backend
 npm install
-cp .env.example .env   # then edit the values
+cp .env.example .env   # fill in your values
 ```
 
-Create the database once, before starting the server. The application never
-creates schemas at startup:
+Create the database:
 
 ```sql
 CREATE DATABASE notes_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
+Run migrations:
+
+```bash
+npm run migrate
+```
+
 ## Scripts
 
-| Script              | Purpose                                          |
-| ------------------- | ------------------------------------------------ |
-| `npm run dev`       | Start with reload on change (`tsx watch`)        |
-| `npm run build`     | Compile TypeScript to `dist/`                    |
-| `npm start`         | Run the compiled build                           |
-| `npm run typecheck` | Type-check without emitting output               |
+| Script              | Purpose                                   |
+| ------------------- | ----------------------------------------- |
+| `npm run dev`       | Start with auto-reload (`tsx watch`)      |
+| `npm run build`     | Compile TypeScript to `dist/`             |
+| `npm start`         | Run the compiled build                    |
+| `npm run typecheck` | Type-check without emitting               |
+| `npm run migrate`   | Apply pending SQL migrations              |
 
 ## Endpoints
 
-| Method | Path          | Description                          |
-| ------ | ------------- | ------------------------------------ |
-| GET    | `/api/health` | Readiness check, including MySQL     |
+| Method | Path               | Auth   | Description                |
+| ------ | ------------------ | ------ | -------------------------- |
+| GET    | `/api/health`      | –      | Health check               |
+| POST   | `/api/auth/signup` | –      | Create account, get token  |
+| POST   | `/api/auth/login`  | –      | Login, get token           |
+| GET    | `/api/auth/me`     | Bearer | Get current user           |
+| POST   | `/api/auth/logout` | Bearer | Logout                     |
 
-`/api/health` answers `200` when the database responds and `503` when it does
-not, so the API never reports itself healthy without its database:
+Send the token as `Authorization: Bearer <token>`.
 
-```json
-{
-  "success": true,
-  "message": "API is running",
-  "environment": "development",
-  "database": "connected",
-  "timestamp": "2026-08-10T00:00:00.000Z"
-}
-```
-
-Unknown routes return `404` with `{ "success": false, "message": "Route not found" }`.
+Login returns `401` with the same message whether the email doesn't exist or the password is wrong.
 
 ## Notes
 
-- Configuration is validated at startup; the process refuses to run with a
-  missing or malformed `.env`.
-- MySQL is a hard dependency. If the database cannot be reached the server logs
-  a fatal error and exits with code `1` without binding a port — in every
-  environment, not only production.
-- Logging goes through Pino only. Authorization headers, cookies, passwords and
-  tokens are redacted before anything is written.
+- Config is validated at startup — missing `.env` values will crash the process.
+- Passwords are hashed with bcrypt (cost 12).
+- Logging uses Pino. Passwords and tokens are redacted from logs.
