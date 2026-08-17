@@ -28,12 +28,15 @@ export interface AppConfig {
   readonly port: number;
   readonly logLevel: LogLevel;
   readonly allowedOrigins: readonly string[];
+  readonly dummyPasswordHash: string;
   readonly database: DatabaseConfig;
   readonly jwt: JwtConfig;
 }
 
 const NODE_ENVIRONMENTS: readonly NodeEnvironment[] = ['development', 'test', 'production'];
 const LOG_LEVELS: readonly LogLevel[] = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
+
+const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
 function readEnv(key: string, fallback?: string): string {
   const value = process.env[key]?.trim();
@@ -94,6 +97,14 @@ function loadConfig(): AppConfig {
   const frontendUrl = readEnv('FRONTEND_URL', 'http://localhost:5173');
   const allowedOrigins = frontendUrl.split(',').map((o) => o.trim()).filter(Boolean);
 
+  // If this isn't a real bcrypt hash, bcrypt.compare returns false immediately
+  // instead of doing the hashing work, which would quietly remove the timing
+  // protection on login. So reject a bad value at startup rather than later.
+  const dummyPasswordHash = readEnv('DUMMY_PASSWORD_HASH');
+  if (!BCRYPT_HASH_PATTERN.test(dummyPasswordHash)) {
+    throw new Error('DUMMY_PASSWORD_HASH must be a bcrypt hash (60 characters, starting with $2b$)');
+  }
+
   return {
     nodeEnv,
     isProduction,
@@ -101,6 +112,7 @@ function loadConfig(): AppConfig {
     port: readInt('PORT', 5000),
     logLevel,
     allowedOrigins,
+    dummyPasswordHash,
     database: {
       host: readEnv('DB_HOST', 'localhost'),
       port: readInt('DB_PORT', 3306),

@@ -11,9 +11,8 @@ import { authenticate } from '../middleware/authenticate';
 
 const router = Router();
 
-// Every notes endpoint requires authentication. Applying the middleware at the
-// router level keeps individual route registrations clean and makes it
-// impossible to forget the guard on a new endpoint.
+// Applied at the router level so every notes endpoint is authenticated and a
+// new route can't accidentally be left unguarded.
 router.use(authenticate);
 
 router.post('/', postNote);

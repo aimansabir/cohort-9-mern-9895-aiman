@@ -13,7 +13,6 @@ import type { CreateNoteInput, UpdateNoteInput } from '../validation/noteSchemas
 
 const NOTE_NOT_FOUND_MESSAGE = 'Note not found';
 
-/** Drops `user_id` and maps snake_case timestamps to camelCase ISO strings. */
 function toPublicNote(record: NoteRecord): PublicNote {
   return {
     id: record.id,
@@ -24,11 +23,6 @@ function toPublicNote(record: NoteRecord): PublicNote {
   };
 }
 
-/**
- * Distinguishes expected outcomes from genuine faults: an `AppError` is a
- * deliberate answer and travels on untouched, while anything else is a real
- * failure worth its own log entry before the global handler turns it into a 500.
- */
 function rethrow(log: Logger, error: unknown, event: string): never {
   if (error instanceof AppError) {
     throw error;

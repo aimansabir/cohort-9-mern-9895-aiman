@@ -11,12 +11,6 @@ import {
 import { createNoteSchema, parseNoteId, updateNoteSchema } from '../validation/noteSchemas';
 import { parseBody } from '../validation/parseBody';
 
-/**
- * Each handler catches and forwards to `next` explicitly. Express 5 would
- * forward a rejected promise on its own, but being explicit keeps the error path
- * visible and independent of that behaviour.
- */
-
 export const postNote: RequestHandler = async (req, res, next): Promise<void> => {
   try {
     const { id: userId } = requireAuthenticatedUser(req);

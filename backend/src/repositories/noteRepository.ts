@@ -5,20 +5,10 @@ import type { NewNote, NoteRecord, UpdateNote } from '../types/note';
 
 interface NoteRow extends RowDataPacket, NoteRecord {}
 
-/**
- * Translates driver failures so that neither SQL text nor MySQL error codes can
- * reach a client. Every error becomes an opaque wrapper that the global handler
- * reports as a 500.
- */
 function toDomainError(error: unknown, operation: string): Error {
   return new Error(`Database operation failed: ${operation}`, { cause: error });
 }
 
-/**
- * Inserts a note and reads it back so the response contains the timestamps
- * MySQL generated. The user id comes from the JWT identity — never from the
- * request body.
- */
 export async function createNote(note: NewNote): Promise<NoteRecord> {
   let insertId: number;
   try {
@@ -47,7 +37,6 @@ export async function createNote(note: NewNote): Promise<NoteRecord> {
   return created;
 }
 
-/** Returns every note belonging to the authenticated user, newest first. */
 export async function findNotesByUserId(userId: number): Promise<NoteRecord[]> {
   try {
     const [rows] = await getPool().execute<NoteRow[]>(
@@ -63,11 +52,8 @@ export async function findNotesByUserId(userId: number): Promise<NoteRecord[]> {
   }
 }
 
-/**
- * Fetches a single note only when it belongs to the given user. Both the note
- * id and the user id appear in the WHERE clause so a foreign-owned note is
- * indistinguishable from a nonexistent one.
- */
+// user_id is in the WHERE clause as well as id, so someone else's note looks
+// exactly the same as one that doesn't exist
 export async function findNoteByIdAndUserId(
   id: number,
   userId: number,
@@ -87,11 +73,6 @@ export async function findNoteByIdAndUserId(
   }
 }
 
-/**
- * Updates title and content for a note owned by the given user. Returns the
- * updated row, or `undefined` when the note does not exist or belongs to
- * someone else.
- */
 export async function updateNoteByIdAndUserId(
   id: number,
   userId: number,
@@ -113,8 +94,6 @@ export async function updateNoteByIdAndUserId(
     throw toDomainError(error, 'updateNoteByIdAndUserId');
   }
 
-  // Read-back is a separate try/catch so a failure here is reported as a
-  // post-update read problem rather than the update itself failing.
   try {
     return await findNoteByIdAndUserId(id, userId);
   } catch (error) {
@@ -124,10 +103,6 @@ export async function updateNoteByIdAndUserId(
   }
 }
 
-/**
- * Deletes a note owned by the given user. Returns `true` when a row was
- * removed, `false` when nothing matched (nonexistent or foreign-owned).
- */
 export async function deleteNoteByIdAndUserId(id: number, userId: number): Promise<boolean> {
   try {
     const [result] = await getPool().execute<ResultSetHeader>(
