@@ -9,7 +9,9 @@ import {
 } from '../repositories/noteRepository';
 import type { NoteRecord, PublicNote } from '../types/note';
 import { AppError } from '../utils/AppError';
+import { createNoteSchema, updateNoteSchema } from '../validation/noteSchemas';
 import type { CreateNoteInput, UpdateNoteInput } from '../validation/noteSchemas';
+import { parseBody } from '../validation/parseBody';
 
 const NOTE_NOT_FOUND_MESSAGE = 'Note not found';
 
@@ -37,10 +39,11 @@ export async function createNote(
   input: CreateNoteInput,
 ): Promise<PublicNote> {
   try {
+    const validated = parseBody(createNoteSchema, input);
     const record = await insertNote({
       userId,
-      title: input.title,
-      content: input.content,
+      title: validated.title,
+      content: validated.content,
     });
 
     log.info({ userId, noteId: record.id }, 'Note created');
@@ -82,9 +85,10 @@ export async function updateNote(
   input: UpdateNoteInput,
 ): Promise<PublicNote> {
   try {
+    const validated = parseBody(updateNoteSchema, input);
     const record = await updateNoteByIdAndUserId(noteId, userId, {
-      title: input.title,
-      content: input.content,
+      title: validated.title,
+      content: validated.content,
     });
 
     if (record === undefined) {
