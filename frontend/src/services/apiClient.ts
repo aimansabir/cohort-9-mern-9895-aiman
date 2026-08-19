@@ -22,12 +22,14 @@ export async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   const { method = 'GET', body } = options;
 
+  const encodedBody = body === undefined ? undefined : JSON.stringify(body);
+
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
       headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: encodedBody,
     });
   } catch {
     // fetch only rejects when there was no response at all
