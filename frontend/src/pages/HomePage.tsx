@@ -1,4 +1,6 @@
-export default function HomePage() {
+import type { ReactElement } from 'react';
+
+export default function HomePage(): ReactElement {
   return (
     <section>
       <h1>Notes App</h1>

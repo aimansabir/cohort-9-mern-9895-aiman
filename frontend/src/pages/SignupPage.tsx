@@ -1,4 +1,6 @@
-export default function SignupPage() {
+import type { ReactElement } from 'react';
+
+export default function SignupPage(): ReactElement {
   return (
     <section>
       <h1>Sign up</h1>

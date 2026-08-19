@@ -1,4 +1,6 @@
-export default function NotesPage() {
+import type { ReactElement } from 'react';
+
+export default function NotesPage(): ReactElement {
   return (
     <section>
       <h1>Your notes</h1>

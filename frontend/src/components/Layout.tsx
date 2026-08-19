@@ -1,6 +1,7 @@
+import type { ReactElement } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 
-export default function Layout() {
+export default function Layout(): ReactElement {
   return (
     <div className="layout">
       <header className="header">

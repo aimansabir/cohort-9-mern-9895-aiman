@@ -1,4 +1,6 @@
-export default function LoginPage() {
+import type { ReactElement } from 'react';
+
+export default function LoginPage(): ReactElement {
   return (
     <section>
       <h1>Log in</h1>

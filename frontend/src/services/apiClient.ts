@@ -34,7 +34,12 @@ export async function apiRequest<T>(
     throw new ApiError('Could not reach the server', 0);
   }
 
-  const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
+  let payload: ApiResponse<T> | null;
+  try {
+    payload = (await response.json()) as ApiResponse<T>;
+  } catch {
+    payload = null;
+  }
 
   if (!response.ok) {
     throw new ApiError(payload?.message ?? 'Something went wrong', response.status);
