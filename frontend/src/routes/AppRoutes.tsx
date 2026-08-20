@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import Layout from '../components/Layout';
+import ProtectedRoute from '../components/ProtectedRoute';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import NotesPage from '../pages/NotesPage';
@@ -14,7 +15,10 @@ export default function AppRoutes(): ReactElement {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/notes" element={<NotesPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/notes" element={<NotesPage />} />
+        </Route>
       </Route>
     </Routes>
   );

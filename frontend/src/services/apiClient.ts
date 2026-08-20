@@ -14,21 +14,30 @@ export class ApiError extends Error {
 interface RequestOptions {
   method?: string;
   body?: unknown;
+  token?: string | null;
 }
 
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<ApiResponse<T>> {
-  const { method = 'GET', body } = options;
+  const { method = 'GET', body, token } = options;
 
   const encodedBody = body === undefined ? undefined : JSON.stringify(body);
+
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
-      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+      headers,
       body: encodedBody,
     });
   } catch {
