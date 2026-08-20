@@ -8,6 +8,7 @@ import { notFound } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
 import authRoutes from './routes/authRoutes';
 import healthRoutes from './routes/healthRoutes';
+import noteRoutes from './routes/noteRoutes';
 import { AppError } from './utils/AppError';
 
 const corsOptions: CorsOptions = {
@@ -32,6 +33,7 @@ export function createApp(): Application {
 
   app.use('/api/health', healthRoutes);
   app.use('/api/auth', authRoutes);
+  app.use('/api/notes', noteRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
