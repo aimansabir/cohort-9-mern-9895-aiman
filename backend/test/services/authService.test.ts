@@ -4,11 +4,12 @@ import { queries, queueResults, resetPool, rowsResult, writeResult } from '../he
 import { silentLogger } from '../helpers/silentLogger';
 import { getUserProfile, logIn, signUp } from '../../src/services/authService';
 import { hashPassword } from '../../src/services/passwordService';
+import type { UserRecord } from '../../src/types/user';
 import { AppError } from '../../src/utils/AppError';
 
 const log = silentLogger();
 
-function userRow(passwordHash: string) {
+function userRow(passwordHash: string): UserRecord {
   return {
     id: 5,
     name: 'Aiman',

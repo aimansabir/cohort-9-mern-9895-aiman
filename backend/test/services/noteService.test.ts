@@ -15,11 +15,12 @@ import {
   listNotes,
   updateNote,
 } from '../../src/services/noteService';
+import type { NoteRecord } from '../../src/types/note';
 import { AppError } from '../../src/utils/AppError';
 
 const log = silentLogger();
 
-const aRow = {
+const aRow: NoteRecord = {
   id: 1,
   user_id: 5,
   title: 'Groceries',
