@@ -66,7 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
       // should not stop us clearing it on this device.
       await authService.logout(token).catch(() => undefined);
     }
-    clearStoredToken();
+
+    try {
+      clearStoredToken();
+    } catch {
+      // localStorage is not always available, for example in private mode.
+      // Logging out should still work, so keep going and clear the state.
+    }
+
     setToken(null);
     setUser(null);
   }, [token]);
