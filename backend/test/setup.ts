@@ -1,6 +1,6 @@
 // env.ts reads these when it is first imported and throws if any are
 // missing, so they are set here rather than relying on a local .env file
-// that will not exist on someone else machine or in CI.
+// that will not exist on someone else's machine or in CI.
 process.env['NODE_ENV'] = 'test';
 process.env['LOG_LEVEL'] = 'error';
 

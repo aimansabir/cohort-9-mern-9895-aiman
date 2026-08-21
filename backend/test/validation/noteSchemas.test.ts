@@ -82,7 +82,7 @@ describe('createNoteSchema', () => {
     expect(createNoteSchema.parse({ title: 'Empty', content: '' }).content).to.equal('');
   });
 
-  // strictObject is what stops a request smuggling in someone else user id
+  // strictObject is what stops a request smuggling in someone else's user id
   it('rejects unexpected keys', () => {
     expect(() =>
       createNoteSchema.parse({ title: 'Mine', content: '', userId: 99 }),

@@ -34,7 +34,7 @@ describe('noteRepository', () => {
   });
 
   // Every one of these proves the same thing: the user id is part of the
-  // query, so one user cannot reach another user rows even by guessing ids.
+  // query, so one user cannot reach another user's rows even by guessing ids.
   describe('scoping every query to the owner', () => {
     it('filters the list by user id', async () => {
       queueResults(rowsResult([aRow]));
@@ -70,7 +70,7 @@ describe('noteRepository', () => {
     });
   });
 
-  // Someone else note has to look exactly like a note that does not exist,
+  // Someone else's note has to look exactly like a note that does not exist,
   // otherwise the response tells an attacker which ids are real.
   describe('when the note belongs to someone else', () => {
     it('reads as not found rather than as forbidden', async () => {
