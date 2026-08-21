@@ -237,3 +237,39 @@ export function LogOutIcon(): ReactElement {
     </svg>
   );
 }
+
+export function ClockIcon(): ReactElement {
+  return (
+    <svg {...base} width={13} height={13} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+export function CalendarIcon(): ReactElement {
+  return (
+    <svg {...base} width={14} height={14} aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
+export function SortAzIcon(): ReactElement {
+  return (
+    <svg {...base} width={14} height={14} aria-hidden="true">
+      <path d="M4 7h9M4 12h7M4 17h5" />
+      <path d="M17 5v14M17 19l-2.5-2.5M17 19l2.5-2.5" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(): ReactElement {
+  return (
+    <svg {...base} width={14} height={14} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+

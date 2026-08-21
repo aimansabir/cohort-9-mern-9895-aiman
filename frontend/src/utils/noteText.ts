@@ -30,46 +30,71 @@ export function toPlainText(html: string): string {
   const holder = document.createElement('div');
   // headings, paragraphs and list items would otherwise run together
   // into one word once the tags are gone
-  holder.innerHTML = sanitizeHtml(html).replace(/<\/(p|h2|h3|li)>/gi, ' $&');
+  holder.innerHTML = sanitizeHtml(html).replace(
+    /<\/(p|h1|h2|h3|li|blockquote)>|<br\s*\/?>/gi,
+    ' $&',
+  );
   return (holder.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
 export function formatUpdated(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
     return '';
   }
 
-  const minutes = Math.round((Date.now() - then) / 60000);
-  if (minutes < 1) {
-    return 'Just now';
+  // numeric hour so a 12 hour clock reads 4:19 PM rather than 04:19 PM
+  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const today = new Date();
+
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return `Today, ${time}`;
   }
-  if (minutes < 60) {
-    return `${minutes} min ago`;
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday, ${time}`;
   }
 
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) {
-    return hours === 1 ? `1 hour ago` : `${hours} hours ago`;
-  }
-
-  const days = Math.round(hours / 24);
-  if (days === 1) {
-    return 'Yesterday';
-  }
-  if (days < 7) {
-    return `${days} days ago`;
-  }
-
-  return new Date(then).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  // the year is only worth showing once it is not this one
+  const day = date.toLocaleDateString(
+    undefined,
+    date.getFullYear() === today.getFullYear()
+      ? { day: 'numeric', month: 'short' }
+      : { day: 'numeric', month: 'short', year: 'numeric' },
+  );
+  return `${day}, ${time}`;
 }
 
-export function greetingFor(date: Date): string {
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+
+export function timeOfDay(date: Date): TimeOfDay {
   const hour = date.getHours();
+
   if (hour < 12) {
+    return 'morning';
+  }
+  if (hour < 17) {
+    return 'afternoon';
+  }
+  if (hour < 21) {
+    return 'evening';
+  }
+  return 'night';
+}
+
+// "Aiman Gul Sabir" is a mouthful in a greeting, so only the first part
+// is used. Falls back to the whole thing if there is no space in it.
+export function firstNameOf(name: string): string {
+  return name.trim().split(' ')[0] ?? name;
+}
+
+export function greetingFor(time: TimeOfDay): string {
+  if (time === 'morning') {
     return 'Good morning';
   }
-  if (hour < 18) {
+  if (time === 'afternoon') {
     return 'Good afternoon';
   }
   return 'Good evening';

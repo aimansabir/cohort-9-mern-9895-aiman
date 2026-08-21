@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import type { ReactElement } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ClipboardEvent, ReactElement } from 'react';
 
 import { sanitizeHtml } from '../utils/noteText';
 import {
@@ -51,11 +51,29 @@ const toolGroups: Tool[][] = [
   ],
 ];
 
+// execCommand throws for anything the browser does not know, and undo and
+// redo have no on or off state to report.
+function isToolActive(tool: Tool): boolean {
+  if (tool.command === 'undo' || tool.command === 'redo') {
+    return false;
+  }
+
+  try {
+    if (tool.command === 'formatBlock') {
+      return document.queryCommandValue('formatBlock').toLowerCase() === tool.argument;
+    }
+    return document.queryCommandState(tool.command);
+  } catch {
+    return false;
+  }
+}
+
 export default function RichTextEditor({
   initialValue,
   onChange,
 }: RichTextEditorProps): ReactElement {
   const boxRef = useRef<HTMLDivElement>(null);
+  const [activeTools, setActiveTools] = useState<string[]>([]);
 
   // The box keeps its own markup while you type. NotesPage gives it a key so
   // opening a different note remounts it with that note in place.
@@ -66,6 +84,45 @@ export default function RichTextEditor({
     }
   }, [initialValue]);
 
+  // The buttons light up for whatever the caret is sitting in, which the
+  // browser only tells us once the selection has actually moved.
+  useEffect(() => {
+    function refreshActiveTools(): void {
+      const box = boxRef.current;
+      const anchor = document.getSelection()?.anchorNode ?? null;
+      if (!box || !anchor || !box.contains(anchor)) {
+        return;
+      }
+
+      setActiveTools(
+        toolGroups.flat().filter(isToolActive).map((tool) => tool.label),
+      );
+    }
+
+    document.addEventListener('selectionchange', refreshActiveTools);
+    return () => {
+      document.removeEventListener('selectionchange', refreshActiveTools);
+    };
+  }, []);
+
+  // Pasted markup goes straight into the live DOM, where an onerror
+  // attribute would run, so it is cleaned on the way in as well as on save.
+  function handlePaste(event: ClipboardEvent<HTMLDivElement>): void {
+    event.preventDefault();
+
+    const html = event.clipboardData.getData('text/html');
+    if (html) {
+      document.execCommand('insertHTML', false, sanitizeHtml(html));
+    } else {
+      document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+    }
+
+    const box = boxRef.current;
+    if (box) {
+      onChange(box.innerHTML);
+    }
+  }
+
   function runCommand(tool: Tool): void {
     document.execCommand(tool.command, false, tool.argument);
 
@@ -73,6 +130,7 @@ export default function RichTextEditor({
     if (box) {
       box.focus();
       onChange(box.innerHTML);
+      setActiveTools(toolGroups.flat().filter(isToolActive).map((item) => item.label));
     }
   }
 
@@ -87,7 +145,13 @@ export default function RichTextEditor({
                 type="button"
                 title={tool.label}
                 aria-label={tool.label}
-                className={tool.text ? 'editor-text-button' : undefined}
+                className={[
+                  tool.text ? 'editor-text-button' : '',
+                  activeTools.includes(tool.label) ? 'is-active' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-pressed={activeTools.includes(tool.label)}
                 // keep the text selection while the button is pressed
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => runCommand(tool)}
@@ -109,6 +173,8 @@ export default function RichTextEditor({
         aria-label="Note content"
         data-placeholder="Start writing your note..."
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
+        onPaste={handlePaste}
+        onDrop={(event) => event.preventDefault()}
       />
     </div>
   );

@@ -1,26 +1,73 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import NoteCard from '../components/NoteCard';
 import NoteEditor from '../components/NoteEditor';
-import { LogOutIcon, NoteIcon, PlusIcon } from '../components/icons';
+import GreetingIcon from '../components/GreetingIcon';
+import HeaderScene from '../components/HeaderScene';
+import {
+  CalendarIcon,
+  ClockIcon,
+  LogOutIcon,
+  NoteIcon,
+  PlusIcon,
+  SearchIcon,
+  SortAzIcon,
+} from '../components/icons';
 import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '../services/apiClient';
 import * as noteService from '../services/noteService';
 import type { Note } from '../types/note';
-import { greetingFor, plural, sanitizeHtml } from '../utils/noteText';
+import {
+  firstNameOf,
+  greetingFor,
+  plural,
+  sanitizeHtml,
+  timeOfDay,
+  toPlainText,
+} from '../utils/noteText';
 
 function messageFor(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
 }
 
+type SortOrder = 'updated' | 'created' | 'title';
+
 function newestFirst(notes: Note[]): Note[] {
   return [...notes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
+function sortNotes(notes: Note[], order: SortOrder): Note[] {
+  const sorted = [...notes];
+
+  if (order === 'title') {
+    return sorted.sort((a, b) => a.title.localeCompare(b.title));
+  }
+  if (order === 'created') {
+    return sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  return sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+const sortOptions: { value: SortOrder; label: string; icon: ReactElement }[] = [
+  { value: 'updated', label: 'Updated', icon: <ClockIcon /> },
+  { value: 'created', label: 'Created', icon: <CalendarIcon /> },
+  { value: 'title', label: 'Title', icon: <SortAzIcon /> },
+];
+
+// The list endpoint returns every note the user owns, so searching is done
+// here rather than asking the server for it.
+function matchesQuery(note: Note, term: string): boolean {
+  return (
+    note.title.toLowerCase().includes(term) ||
+    toPlainText(note.content).toLowerCase().includes(term)
+  );
+}
+
 export default function NotesPage(): ReactElement {
   const { user, token, logout } = useAuth();
+  const time = timeOfDay(new Date());
   const navigate = useNavigate();
 
   const [notes, setNotes] = useState<Note[]>([]);
@@ -32,6 +79,19 @@ export default function NotesPage(): ReactElement {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // The list request is still in flight while New note already works, so a
+  // note added in that window must not be replaced by the older response.
+  const hasLocalChanges = useRef(false);
+
+  const [query, setQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('updated');
+
+  const visibleNotes = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    const matched = term ? notes.filter((note) => matchesQuery(note, term)) : notes;
+    return sortNotes(matched, sortOrder);
+  }, [notes, query, sortOrder]);
+
   useEffect(() => {
     if (!token) {
       return;
@@ -42,7 +102,7 @@ export default function NotesPage(): ReactElement {
     noteService
       .listNotes(token)
       .then((list) => {
-        if (active) {
+        if (active && !hasLocalChanges.current) {
           setNotes(newestFirst(list));
         }
       })
@@ -87,6 +147,7 @@ export default function NotesPage(): ReactElement {
       return;
     }
 
+    hasLocalChanges.current = true;
     setIsSaving(true);
     setSaveError(null);
 
@@ -115,6 +176,8 @@ export default function NotesPage(): ReactElement {
     if (!token) {
       return;
     }
+
+    hasLocalChanges.current = true;
 
     try {
       await noteService.deleteNote(token, id);
@@ -152,16 +215,55 @@ export default function NotesPage(): ReactElement {
 
         <div className="notes-main">
           <header className="notes-head">
+            <HeaderScene time={time} />
+
             <h1>
-              {greetingFor(new Date())}
-              {user ? `, ${user.name}` : ''}.
+              <GreetingIcon time={time} />
+              {greetingFor(time)}
+              {user ? `, ${firstNameOf(user.name)}` : ''}.
             </h1>
             <p className="notes-count">
               {isLoading
                 ? 'Loading your notes...'
-                : `You have ${plural(notes.length, 'note')}.`}
+                : query.trim()
+                  ? `${visibleNotes.length} of ${plural(notes.length, 'note')} match.`
+                  : `You have ${plural(notes.length, 'note')}.`}
             </p>
           </header>
+
+          {!isLoading && notes.length > 0 && (
+            <div className="notes-tools">
+              <div className="notes-search">
+                <SearchIcon />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search notes"
+                  aria-label="Search notes"
+                />
+              </div>
+
+              <span className="notes-sort-label" id="sort-label">
+                Sort by
+              </span>
+
+              <div className="notes-sort" role="group" aria-labelledby="sort-label">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={sortOrder === option.value ? 'is-active' : undefined}
+                    aria-pressed={sortOrder === option.value}
+                    onClick={() => setSortOrder(option.value)}
+                  >
+                    {option.icon}
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {listError && <p className="error">{listError}</p>}
 
@@ -180,8 +282,18 @@ export default function NotesPage(): ReactElement {
             </div>
           )}
 
+          {!isLoading && notes.length > 0 && visibleNotes.length === 0 && (
+            <div className="notes-empty">
+              <h2>No matches</h2>
+              <p>Nothing here mentions &ldquo;{query.trim()}&rdquo;.</p>
+              <button type="button" className="button" onClick={() => setQuery('')}>
+                Clear search
+              </button>
+            </div>
+          )}
+
           <div className="notes-grid">
-            {notes.map((note) => (
+            {visibleNotes.map((note) => (
               <NoteCard
                 key={note.id}
                 note={note}

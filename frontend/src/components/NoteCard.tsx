@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 
 import type { Note } from '../types/note';
 import { formatUpdated, toPlainText } from '../utils/noteText';
-import { TrashIcon } from './icons';
+import { ClockIcon, NoteIcon, TrashIcon } from './icons';
 
 interface NoteCardProps {
   note: Note;
@@ -18,16 +18,23 @@ export default function NoteCard({ note, onOpen, onDelete }: NoteCardProps): Rea
   return (
     <article className="note-card">
       <button type="button" className="note-open" onClick={onOpen}>
+        <span className="note-badge">
+          <NoteIcon />
+        </span>
+
         <h2>{note.title}</h2>
         <p>{preview || 'This note is empty'}</p>
       </button>
 
       <footer className="note-foot">
-        <span className="note-time">{formatUpdated(note.updatedAt)}</span>
+        <span className="note-time">
+          <ClockIcon />
+          {formatUpdated(note.updatedAt)}
+        </span>
 
         <button
           type="button"
-          className="icon-button"
+          className="icon-button note-trash"
           onClick={() => setIsConfirming(true)}
           aria-label={`Delete ${note.title}`}
         >

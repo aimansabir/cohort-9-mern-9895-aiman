@@ -40,6 +40,7 @@ a:hover {
 /* ---------- layout ---------- */
 
 .layout {
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -952,18 +953,50 @@ form button[type='submit']:disabled {
 /* .content centres a short page, which suits the auth card but not a
    dashboard, so this fills the space and starts at the top */
 .notes {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
+  isolation: isolate;
 }
 
 .notes-head {
-  margin-bottom: 1.75rem;
+  position: relative;
+  margin-bottom: 2.1rem;
+}
+
+.header-scene {
+  position: absolute;
+  bottom: -2.25rem;
+  right: -4rem;
+  z-index: -1;
+  width: 46rem;
+  max-width: 72%;
+  /* fixed height with cover, so artwork of any shape crops to the same band
+     instead of changing how tall the header is */
+  height: 10rem;
+  object-fit: cover;
+  object-position: right bottom;
+  pointer-events: none;
+  /* the artwork has a hard left edge so fade it into the page */
+  mask-image: linear-gradient(to right, transparent, #000 30%);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 30%);
 }
 
 .notes-head h1 {
-  margin: 0 0 0.3rem;
-  font-size: 1.9rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 0.5rem;
+  font-size: 2.3rem;
+  /* h1 defaults to bold, which reads as heavy at this size */
+  font-weight: 600;
+}
+
+.greeting-icon {
+  flex-shrink: 0;
+  width: 2.9rem;
+  height: 2.9rem;
 }
 
 .notes-count {
@@ -1055,6 +1088,50 @@ form button[type='submit']:disabled {
   color: var(--primary);
 }
 
+.note-card::after {
+  content: '';
+  position: absolute;
+  left: 1.15rem;
+  right: 1.15rem;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background-image: linear-gradient(90deg, var(--primary), #a78bfa);
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.note-card:hover::after {
+  opacity: 1;
+}
+
+.note-badge {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.8rem;
+  border-radius: 9px;
+  background-color: #f1ecff;
+  color: var(--primary);
+}
+
+.note-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.note-trash {
+  border: 1px solid var(--border);
+}
+
+.note-trash:hover {
+  border-color: var(--danger);
+  background-color: var(--danger-bg);
+  color: var(--danger);
+}
+
 .note-confirm {
   position: absolute;
   inset: 0;
@@ -1129,26 +1206,101 @@ form button[type='submit']:disabled {
   margin-top: 0.7rem;
 }
 
-/* ---------- note editor dialog ---------- */
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-  background-color: rgba(35, 24, 70, 0.35);
-  backdrop-filter: blur(3px);
+.notes-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.4rem;
 }
+
+.notes-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 26rem;
+  color: var(--muted);
+}
+
+.notes-search svg {
+  position: absolute;
+  left: 0.75rem;
+  pointer-events: none;
+}
+
+.notes-search input {
+  width: 100%;
+  padding-left: 2.2rem;
+  border-radius: 10px;
+}
+
+.notes-sort-label {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.notes-sort {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.22rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+}
+
+.notes-sort button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.8rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.notes-sort button:hover {
+  color: var(--primary);
+}
+
+.notes-sort button.is-active {
+  background-color: #efeaff;
+  color: var(--primary);
+}
+
+@media (max-width: 40rem) {
+  .notes-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notes-search {
+    max-width: none;
+  }
+}
+
+/* ---------- note editor dialog ---------- */
 
 .modal {
   width: 100%;
   max-width: 44rem;
+  padding: 0;
+  border: none;
   border-radius: 16px;
   background-color: var(--surface);
+  color: inherit;
   box-shadow: 0 30px 60px rgba(35, 24, 70, 0.3);
   overflow: hidden;
+}
+
+.modal::backdrop {
+  background-color: rgba(35, 24, 70, 0.35);
+  backdrop-filter: blur(3px);
 }
 
 .modal form {
@@ -1168,7 +1320,9 @@ form button[type='submit']:disabled {
 .modal-title {
   flex: 1;
   min-width: 0;
-  padding: 0.3rem 0;
+  /* horizontal room so the focus ring does not sit on the text */
+  padding: 0.45rem 0.65rem;
+  margin-left: -0.65rem;
   border: none;
   border-radius: 0;
   background: none;
@@ -1180,6 +1334,17 @@ form button[type='submit']:disabled {
   outline: none;
   border-color: transparent;
   box-shadow: none;
+}
+
+.modal-title:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-radius: 8px;
+}
+
+.editor-box:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 
 .modal-body {
@@ -1260,6 +1425,11 @@ form button[type='submit']:disabled {
 .editor-toolbar button:hover {
   background-color: #efeaff;
   color: var(--primary);
+}
+
+.editor-toolbar button.is-active {
+  background-color: var(--primary);
+  color: #ffffff;
 }
 
 .editor-box {
@@ -1363,7 +1533,6 @@ form button[type='submit']:disabled {
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
-  /* pull out to the edges of .content so it reads as a full panel */
   margin: -1.5rem 0 -1.5rem -2rem;
   padding: 1.6rem 1.1rem;
   border-right: 1px solid var(--border);
@@ -1423,6 +1592,58 @@ form button[type='submit']:disabled {
   text-decoration: none;
 }
 
+.nav-menu {
+  position: relative;
+}
+
+.nav-user {
+  cursor: pointer;
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 13rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background-color: var(--surface);
+  box-shadow: 0 16px 34px rgba(53, 38, 105, 0.16);
+}
+
+.nav-dropdown-email {
+  padding: 0.35rem 0.6rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.3rem;
+  padding: 0.55rem 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: 0.92rem;
+  text-align: left;
+}
+
+.nav-dropdown-item:hover {
+  background-color: var(--danger-bg);
+  color: var(--danger);
+}
+
 .nav-name {
   font-size: 0.9rem;
   font-weight: 600;
@@ -1445,10 +1666,13 @@ form button[type='submit']:disabled {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-top: auto;
-  padding: 0.62rem 0.7rem;
+  /* pulled out to the panel edges so the rule spans the full width, while
+     the padding keeps the label lined up with the nav items above */
+  margin: auto -1.1rem 0;
+  padding: 1.1rem 1.8rem 0.4rem;
   border: none;
-  border-radius: 10px;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
   background: none;
   color: var(--muted);
   font-size: 0.92rem;
