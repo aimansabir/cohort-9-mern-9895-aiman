@@ -134,3 +134,134 @@ export function EyeOffIcon(): ReactElement {
     </svg>
   );
 }
+
+export function BoldIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M7 5h6a3.5 3.5 0 010 7H7z" />
+      <path d="M7 12h7a3.5 3.5 0 010 7H7z" />
+    </svg>
+  );
+}
+
+export function ItalicIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M15 5h-5M14 19H9M14 5l-4 14" />
+    </svg>
+  );
+}
+
+export function BulletListIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <circle cx="4.5" cy="6" r="1.2" />
+      <circle cx="4.5" cy="12" r="1.2" />
+      <circle cx="4.5" cy="18" r="1.2" />
+    </svg>
+  );
+}
+
+export function NumberListIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M10 6h10M10 12h10M10 18h10M4 6h1v4M4 16.5h2M4 19h2M4 14h2v2.5H4" />
+    </svg>
+  );
+}
+
+export function CloseIcon(): ReactElement {
+  return (
+    <svg {...base} width={17} height={17} aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+export function UnderlineIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M7 4v6a5 5 0 0010 0V4M5 20h14" />
+    </svg>
+  );
+}
+
+export function StrikeIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M4 12h16M7 8a3.5 3.5 0 013.5-3h3A3.5 3.5 0 0117 8M7 16a3.5 3.5 0 003.5 3h3a3.5 3.5 0 003.5-3" />
+    </svg>
+  );
+}
+
+export function QuoteIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M9 7H6a2 2 0 00-2 2v3a2 2 0 002 2h3v-3M20 7h-3a2 2 0 00-2 2v3a2 2 0 002 2h3v-3" />
+    </svg>
+  );
+}
+
+export function UndoIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h11a5 5 0 010 10h-4" />
+    </svg>
+  );
+}
+
+export function RedoIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M15 14l5-5-5-5" />
+      <path d="M20 9H9a5 5 0 000 10h4" />
+    </svg>
+  );
+}
+
+export function LogOutIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+      <path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
+
+export function ClockIcon(): ReactElement {
+  return (
+    <svg {...base} width={13} height={13} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+export function CalendarIcon(): ReactElement {
+  return (
+    <svg {...base} width={14} height={14} aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
+export function SortAzIcon(): ReactElement {
+  return (
+    <svg {...base} width={14} height={14} aria-hidden="true">
+      <path d="M4 7h9M4 12h7M4 17h5" />
+      <path d="M17 5v14M17 19l-2.5-2.5M17 19l2.5-2.5" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(): ReactElement {
+  return (
+    <svg {...base} width={14} height={14} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
