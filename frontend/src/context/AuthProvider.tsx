@@ -11,8 +11,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
   const [token, setToken] = useState<string | null>(getStoredToken);
   const [isLoading, setIsLoading] = useState(() => getStoredToken() !== null);
 
-  // A token left in localStorage might be expired or belong to a deleted
-  // account, so check it with the backend once when the app starts.
+  // token left in local storage might be expired or maybe belong to a deleted acc so check it with the backend once the app starts
   useEffect(() => {
     const storedToken = getStoredToken();
     if (!storedToken) {
@@ -62,18 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
 
   const logout = useCallback(async () => {
     if (token) {
-      // The token stays valid until it expires, so a failed request here
-      // should not stop us clearing it on this device.
+      // The token stored in localStorage might be expired or invalid, so we don't care if the logout request fails. We still want to clear the token and user state.
       await authService.logout(token).catch(() => undefined);
     }
-
-    try {
-      clearStoredToken();
-    } catch {
-      // localStorage is not always available, for example in private mode.
-      // Logging out should still work, so keep going and clear the state.
-    }
-
+    clearStoredToken();
     setToken(null);
     setUser(null);
   }, [token]);
