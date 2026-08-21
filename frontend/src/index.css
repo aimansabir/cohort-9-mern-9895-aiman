@@ -989,14 +989,13 @@ form button[type='submit']:disabled {
   gap: 1rem;
   margin: 0 0 0.5rem;
   font-size: 2.3rem;
-  /* h1 defaults to bold, which reads as heavy at this size */
   font-weight: 600;
 }
 
 .greeting-icon {
-  flex-shrink: 0;
-  width: 2.9rem;
-  height: 2.9rem;
+  flex-shrink: -6;
+  width: 3rem;
+  height: 3rem;
 }
 
 .notes-count {
@@ -1069,6 +1068,9 @@ form button[type='submit']:disabled {
 }
 
 .note-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   color: #a8adba;
   font-size: 0.78rem;
 }
@@ -1114,12 +1116,6 @@ form button[type='submit']:disabled {
   border-radius: 9px;
   background-color: #f1ecff;
   color: var(--primary);
-}
-
-.note-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
 }
 
 .note-trash {
@@ -1583,7 +1579,9 @@ form button[type='submit']:disabled {
   padding: 0.25rem 0.6rem 0.25rem 0.25rem;
   border: 1px solid var(--border);
   border-radius: 999px;
+  background: none;
   color: inherit;
+  cursor: pointer;
 }
 
 .nav-user:hover {
@@ -1594,10 +1592,6 @@ form button[type='submit']:disabled {
 
 .nav-menu {
   position: relative;
-}
-
-.nav-user {
-  cursor: pointer;
 }
 
 .nav-dropdown {
@@ -1666,8 +1660,6 @@ form button[type='submit']:disabled {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  /* pulled out to the panel edges so the rule spans the full width, while
-     the padding keeps the label lined up with the nav items above */
   margin: auto -1.1rem 0;
   padding: 1.1rem 1.8rem 0.4rem;
   border: none;

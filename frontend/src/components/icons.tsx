@@ -152,14 +152,6 @@ export function ItalicIcon(): ReactElement {
   );
 }
 
-export function HeadingIcon(): ReactElement {
-  return (
-    <svg {...base} width={15} height={15} aria-hidden="true">
-      <path d="M6 5v14M18 5v14M6 12h12" />
-    </svg>
-  );
-}
-
 export function BulletListIcon(): ReactElement {
   return (
     <svg {...base} width={15} height={15} aria-hidden="true">
