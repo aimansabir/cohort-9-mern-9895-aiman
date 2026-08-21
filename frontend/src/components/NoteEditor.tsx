@@ -31,9 +31,20 @@ export default function NoteEditor({
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    dialogRef.current?.showModal();
+    const dialog = dialogRef.current;
+    // StrictMode runs this twice in development, and older browsers throw if
+    // showModal is called on a dialog that is already open.
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
     titleRef.current?.focus();
   }, []);
+
+  // Closing the dialog itself lets the browser put focus back on whatever
+  // opened it. Unmounting an open dialog skips that.
+  function requestClose(): void {
+    dialogRef.current?.close();
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -63,7 +74,7 @@ export default function NoteEditor({
           <button
             type="button"
             className="icon-button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close editor"
           >
             <CloseIcon />
@@ -119,7 +130,7 @@ export default function NoteEditor({
             <button
               type="button"
               className="button button-secondary button-small"
-              onClick={onClose}
+              onClick={requestClose}
             >
               Cancel
             </button>

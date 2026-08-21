@@ -147,7 +147,6 @@ export default function NotesPage(): ReactElement {
       return;
     }
 
-    hasLocalChanges.current = true;
     setIsSaving(true);
     setSaveError(null);
 
@@ -157,11 +156,13 @@ export default function NotesPage(): ReactElement {
     try {
       if (editingNote) {
         const updated = await noteService.updateNote(token, editingNote.id, title, cleaned);
+        hasLocalChanges.current = true;
         setNotes((current) =>
           newestFirst(current.map((note) => (note.id === updated.id ? updated : note))),
         );
       } else {
         const created = await noteService.createNote(token, title, cleaned);
+        hasLocalChanges.current = true;
         setNotes((current) => newestFirst([created, ...current]));
       }
       setIsEditorOpen(false);
@@ -177,10 +178,9 @@ export default function NotesPage(): ReactElement {
       return;
     }
 
-    hasLocalChanges.current = true;
-
     try {
       await noteService.deleteNote(token, id);
+      hasLocalChanges.current = true;
       setNotes((current) => current.filter((note) => note.id !== id));
       if (editingNote?.id === id) {
         setIsEditorOpen(false);
