@@ -48,6 +48,7 @@ a:hover {
 .header {
   position: sticky;
   top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -83,8 +84,11 @@ a:hover {
 
 .content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: 100%;
-  max-width: 78rem;
+  max-width: 92rem;
   margin: 0 auto;
   padding: 1.5rem 2rem 1.5rem;
 }
@@ -108,12 +112,18 @@ h1 {
 /* ---------- forms ---------- */
 
 .form-page {
-  max-width: 24rem;
-  margin: 2rem auto 0;
-  padding: 2rem;
+  position: relative;
+  isolation: isolate;
+  /* .content is a flex column, so without this the auto margins below
+     shrink the card to fit its text instead of using max-width */
+  width: 100%;
+  max-width: 31rem;
+  margin: 2rem auto;
+  padding: 2.4rem;
   background-color: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(53, 38, 105, 0.07);
 }
 
 form {
@@ -247,6 +257,9 @@ form button[type='submit']:disabled {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
   align-items: center;
+  /* fill the space under the header */
+  flex: 1;
+  align-content: center;
   gap: 3.5rem;
   padding: 0 0 2rem;
 }
@@ -298,10 +311,6 @@ form button[type='submit']:disabled {
 }
 
 /* ---------- app mockup ---------- */
-
-.preview-wrap {
-  position: relative;
-}
 
 .preview {
   border: 1px solid var(--border);
@@ -444,62 +453,6 @@ form button[type='submit']:disabled {
   transform: rotate(10deg);
 }
 
-/* ---------- feature strip ---------- */
-
-.features {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  margin: 0 0 1rem;
-  padding: 1.3rem 0.5rem;
-  list-style: none;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(53, 38, 105, 0.07);
-}
-
-.features li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0 1.4rem;
-  border-right: 1px solid var(--border);
-}
-
-.features li:last-child {
-  border-right: none;
-}
-
-.feature-icon {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 2.3rem;
-  height: 2.3rem;
-  border-radius: 50%;
-}
-
-.feature-icon-violet { background-color: #f3efff; color: #7048e8; }
-.feature-icon-pink   { background-color: #ece5ff; color: #6535e0; }
-.feature-icon-blue   { background-color: #e4daff; color: #5a2ad4; }
-.feature-icon-green  { background-color: #ddd0ff; color: #4f21c4; }
-
-.feature-text {
-  min-width: 0;
-}
-
-.features h2 {
-  margin: 0.15rem 0 0.2rem;
-  font-size: 0.88rem;
-}
-
-.features p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
 @media (max-width: 62rem) {
   .landing {
     grid-template-columns: 1fr;
@@ -515,26 +468,9 @@ form button[type='submit']:disabled {
     right: 0.5rem;
     bottom: -1rem;
   }
-
-  .features {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem 0;
-  }
-
-  .features li:nth-child(2) {
-    border-right: none;
-  }
 }
 
 @media (max-width: 34rem) {
-  .features {
-    grid-template-columns: 1fr;
-  }
-
-  .features li {
-    border-right: none;
-  }
-
   .preview-body {
     grid-template-columns: 1fr;
   }
@@ -578,11 +514,6 @@ form button[type='submit']:disabled {
   margin-top: 0;
   padding: 0.4rem 0.9rem;
   font-size: 0.9rem;
-}
-
-.form-page {
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(53, 38, 105, 0.07);
 }
 
 /* ---------- mockup decorations ---------- */
@@ -655,8 +586,7 @@ form button[type='submit']:disabled {
 
 /* ---------- headline scribble ---------- */
 
-/* The underline is sized off this span, so it always matches however wide
-   "Never forget." happens to render. */
+/* sized off this span so it matches the text width */
 .title-line {
   position: relative;
   display: inline-block;
@@ -671,8 +601,7 @@ form button[type='submit']:disabled {
   color: #a78bfa;
 }
 
-/* Direct child only: the pencil has its own paths and must not pick up the
-   dash pattern below, which would hide it inside the gap. */
+/* direct child only, so the pencil paths skip the dash pattern */
 .scribble > svg {
   display: block;
   width: 100%;
@@ -713,9 +642,7 @@ form button[type='submit']:disabled {
   }
 }
 
-/* Walks the pencil along the stroke while it is being drawn. The last step
-   sets opacity too: without it the browser fills in a 100% keyframe from the
-   underlying value (0) and the pencil fades out on the way across. */
+/* the last step needs opacity too, or the pencil fades back out */
 @keyframes scribble-pen {
   0% {
     opacity: 0;
@@ -826,8 +753,7 @@ form button[type='submit']:disabled {
   }
 }
 
-/* Respect people who have asked for less movement: show the finished
-   underline, with the pencil resting at the end of it. */
+/* reduced motion: show the finished underline, no drawing */
 @media (prefers-reduced-motion: reduce) {
   .scribble > svg > path {
     animation: none;
@@ -844,12 +770,7 @@ form button[type='submit']:disabled {
 
 /* ---------- auth pages ---------- */
 
-.form-page {
-  position: relative;
-  isolation: isolate;
-}
-
-/* Soft glow behind the card, same family as the landing page artwork. */
+/* soft glow behind the card */
 .form-page::before,
 .form-page::after {
   content: '';
@@ -881,17 +802,16 @@ form button[type='submit']:disabled {
 }
 
 .form-head h1 {
-  margin-bottom: 0.4rem;
-  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.7rem;
 }
 
 .form-sub {
   margin: 0;
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 
-/* The card is centred, so the link under it should be too. */
 .form-page .form-footer {
   text-align: center;
 }
@@ -899,6 +819,19 @@ form button[type='submit']:disabled {
 .password-field {
   position: relative;
   display: flex;
+}
+.form-page label {
+  margin-top: 1.15rem;
+  font-size: 0.95rem;
+}
+
+.form-page input {
+  padding: 0.75rem 0.9rem;
+}
+
+.form-page form button[type='submit'] {
+  margin-top: 1.7rem;
+  padding: 0.82rem 1.25rem;
 }
 
 .password-field input {
@@ -928,4 +861,88 @@ form button[type='submit']:disabled {
 .password-toggle:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
+}
+
+/* ---------- large screens ---------- */
+
+/* only grow the type where there is room for it */
+@media (min-width: 90rem) {
+  .landing {
+    gap: 4.5rem;
+  }
+
+  .badge {
+    font-size: 1rem;
+  }
+
+  .landing-title {
+    font-size: 4.4rem;
+  }
+
+  .landing-lead {
+    max-width: 34rem;
+    font-size: 1.3rem;
+  }
+
+  .hero-actions {
+    font-size: 1.15rem;
+  }
+
+  .landing-note {
+    font-size: 1rem;
+  }
+
+  .preview-side {
+    font-size: 0.82rem;
+  }
+
+  .preview-list h3 {
+    font-size: 0.98rem;
+  }
+
+  .preview-search {
+    font-size: 0.82rem;
+  }
+
+  .preview-note strong {
+    font-size: 0.88rem;
+  }
+
+  .preview-note ul {
+    font-size: 0.8rem;
+  }
+
+  .preview-time {
+    font-size: 0.74rem;
+  }
+  .form-page {
+    max-width: 35rem;
+    padding: 3rem;
+  }
+
+  .form-head h1 {
+    font-size: 2.1rem;
+  }
+
+  .form-sub {
+    font-size: 1.1rem;
+  }
+
+  .form-page label {
+    font-size: 1.02rem;
+  }
+
+  .form-page input {
+    padding: 0.9rem 1.05rem;
+    font-size: 1.05rem;
+  }
+
+  .form-page form button[type='submit'] {
+    padding: 0.95rem 1.25rem;
+    font-size: 1.08rem;
+  }
+
+  .form-footer {
+    font-size: 1rem;
+  }
 }

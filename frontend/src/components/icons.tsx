@@ -44,33 +44,6 @@ export function PencilIcon(): ReactElement {
   );
 }
 
-export function LockIcon(): ReactElement {
-  return (
-    <svg {...base} width={17} height={17} aria-hidden="true">
-      <rect x="4" y="11" width="16" height="10" rx="2" />
-      <path d="M8 11V7a4 4 0 018 0v4" />
-    </svg>
-  );
-}
-
-export function ScreenIcon(): ReactElement {
-  return (
-    <svg {...base} width={17} height={17} aria-hidden="true">
-      <rect x="2" y="4" width="14" height="10" rx="2" />
-      <rect x="17" y="9" width="5" height="11" rx="1.5" />
-      <path d="M6 18h6" />
-    </svg>
-  );
-}
-
-export function BoltIcon(): ReactElement {
-  return (
-    <svg {...base} width={17} height={17} aria-hidden="true">
-      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
-    </svg>
-  );
-}
-
 /* icons used inside the decorative app mockup */
 
 export function NoteIcon(): ReactElement {

@@ -8,6 +8,12 @@ interface PasswordFieldProps {
   value: string;
   placeholder: string;
   onChange: (value: string) => void;
+  // Signup passes these so the browser checks the rule shown under the
+  // field. Login leaves them out, because an existing password only has
+  // to be non-empty.
+  minLength?: number;
+  pattern?: string;
+  title?: string;
 }
 
 // Password input with a button that switches the field between password
@@ -17,6 +23,9 @@ export default function PasswordField({
   value,
   placeholder,
   onChange,
+  minLength,
+  pattern,
+  title,
 }: PasswordFieldProps): ReactElement {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -28,6 +37,9 @@ export default function PasswordField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        minLength={minLength}
+        pattern={pattern}
+        title={title}
         required
       />
 

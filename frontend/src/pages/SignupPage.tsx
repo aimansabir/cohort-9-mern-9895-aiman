@@ -63,6 +63,9 @@ export default function SignupPage(): ReactElement {
           value={password}
           placeholder="Create a password"
           onChange={setPassword}
+          minLength={8}
+          pattern="(?=.*[A-Za-z])(?=.*\d).{8,}"
+          title="At least 8 characters, with a letter and a number."
         />
         <small>At least 8 characters, with a letter and a number.</small>
 
