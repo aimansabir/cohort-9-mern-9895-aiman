@@ -1,6 +1,7 @@
 import { createNote, deleteNote, listNotes, updateNote } from './noteService';
+import type { Note } from '../types/note';
 
-const aNote = {
+const aNote: Note = {
   id: 1,
   title: 'Groceries',
   content: '<p>milk</p>',
@@ -16,7 +17,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   } as unknown as Response;
 }
 
-const fetchMock = jest.fn();
+const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 function lastCall(): { url: string; options: Record<string, unknown> } {
   const call = fetchMock.mock.calls.at(-1);
@@ -26,7 +27,7 @@ function lastCall(): { url: string; options: Record<string, unknown> } {
 describe('noteService', () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    global.fetch = fetchMock as unknown as typeof fetch;
+    global.fetch = fetchMock;
   });
 
   describe('listNotes', () => {

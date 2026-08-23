@@ -16,12 +16,26 @@ function unreadableResponse(status = 200): Response {
   } as unknown as Response;
 }
 
-const fetchMock = jest.fn();
+const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+
+// Reaching into mock.calls without checking would hide a fetch that never
+// happened, so this fails the test outright instead.
+function lastRequest(): RequestInit {
+  const options = fetchMock.mock.calls.at(-1)?.[1];
+  if (!options) {
+    throw new Error('fetch was never called');
+  }
+  return options;
+}
+
+function lastHeaders(): Record<string, string> {
+  return lastRequest().headers as Record<string, string>;
+}
 
 describe('apiRequest', () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    global.fetch = fetchMock as unknown as typeof fetch;
+    global.fetch = fetchMock;
   });
 
   it('returns the parsed body on success', async () => {
@@ -34,33 +48,29 @@ describe('apiRequest', () => {
     fetchMock.mockResolvedValue(jsonResponse({ success: true }));
     await apiRequest('/api/notes');
 
-    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
-    expect(headers['Content-Type']).toBeUndefined();
+    expect(lastHeaders()['Content-Type']).toBeUndefined();
   });
 
   it('sends json only when there is a body', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ success: true }));
     await apiRequest('/api/notes', { method: 'POST', body: { title: 'x' } });
 
-    const options = fetchMock.mock.calls[0][1];
-    expect((options.headers as Record<string, string>)['Content-Type']).toBe('application/json');
-    expect(options.body).toBe(JSON.stringify({ title: 'x' }));
+    expect(lastHeaders()['Content-Type']).toBe('application/json');
+    expect(lastRequest().body).toBe(JSON.stringify({ title: 'x' }));
   });
 
   it('sends the token as a bearer header', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ success: true }));
     await apiRequest('/api/notes', { token: 'abc123' });
 
-    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
-    expect(headers.Authorization).toBe('Bearer abc123');
+    expect(lastHeaders()['Authorization']).toBe('Bearer abc123');
   });
 
   it('sends no auth header without a token', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ success: true }));
     await apiRequest('/api/notes', { token: null });
 
-    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
-    expect(headers.Authorization).toBeUndefined();
+    expect(lastHeaders()['Authorization']).toBeUndefined();
   });
 
   // Everything that can go wrong arrives at the pages as one kind of error,
@@ -104,6 +114,9 @@ describe('apiRequest', () => {
     });
 
     it('is a real Error so it can be thrown and caught normally', async () => {
+      // without this the test would pass even if apiRequest stopped throwing,
+      // because the catch block would simply never run
+      expect.assertions(2);
       fetchMock.mockResolvedValue(jsonResponse({ message: 'nope' }, 400));
 
       try {
