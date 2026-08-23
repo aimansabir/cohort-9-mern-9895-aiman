@@ -1,9 +1,10 @@
+import type { ReactElement } from 'react';
 import { render, screen } from '@testing-library/react';
 
 import { AuthContext, type AuthContextValue } from '../context/AuthContext';
 import { useAuth } from './useAuth';
 
-function Consumer() {
+function Consumer(): ReactElement {
   const { user } = useAuth();
   return <span>{user ? user.email : 'nobody'}</span>;
 }

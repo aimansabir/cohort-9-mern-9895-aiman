@@ -18,7 +18,7 @@ const mockedUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 const signup = jest.fn();
 
-function renderPage() {
+function renderPage(): void {
   mockedUseAuth.mockReturnValue({
     user: null,
     token: null,
@@ -35,7 +35,7 @@ function renderPage() {
   );
 }
 
-function fillAndSubmit() {
+function fillAndSubmit(): void {
   fireEvent.change(screen.getByPlaceholderText('Your name'), {
     target: { value: 'Aiman' },
   });

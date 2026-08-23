@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { AuthProvider } from './AuthProvider';
@@ -22,7 +23,7 @@ const aUser = {
 // does the same rather than leaving the rejection unhandled.
 const ignore = (): undefined => undefined;
 
-function Consumer() {
+function Consumer(): ReactElement {
   const { user, token, isLoading, login, signup, logout } = useAuth();
 
   return (
@@ -41,7 +42,7 @@ function Consumer() {
   );
 }
 
-function renderProvider() {
+function renderProvider(): void {
   render(
     <AuthProvider>
       <Consumer />

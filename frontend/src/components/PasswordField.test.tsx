@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import PasswordField from './PasswordField';
 
 // The real field is controlled by its page, so the tests drive it the same
 // way rather than leaving value frozen.
-function Harness({ onChange }: { onChange?: (value: string) => void }) {
+function Harness({ onChange }: { onChange?: (value: string) => void }): ReactElement {
   const [value, setValue] = useState('');
 
   return (

@@ -11,7 +11,7 @@ const note: Note = {
   updatedAt: new Date().toISOString(),
 };
 
-function renderCard(overrides: Partial<Note> = {}) {
+function renderCard(overrides: Partial<Note> = {}): { onOpen: jest.Mock; onDelete: jest.Mock } {
   const onOpen = jest.fn();
   const onDelete = jest.fn();
 

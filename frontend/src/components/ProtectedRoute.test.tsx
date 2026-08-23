@@ -10,7 +10,7 @@ const mockedUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 const aUser = { id: 1, name: 'Aiman', email: 'aiman@example.com', createdAt: '2026-01-01T00:00:00Z' };
 
-function renderAt(state: { user: typeof aUser | null; isLoading: boolean }) {
+function renderAt(state: { user: typeof aUser | null; isLoading: boolean }): void {
   mockedUseAuth.mockReturnValue({
     user: state.user,
     token: state.user ? 'a-token' : null,

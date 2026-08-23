@@ -18,7 +18,7 @@ const mockedUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 const login = jest.fn();
 
-function renderPage() {
+function renderPage(): void {
   mockedUseAuth.mockReturnValue({
     user: null,
     token: null,
@@ -35,7 +35,7 @@ function renderPage() {
   );
 }
 
-function fillAndSubmit(email = 'aiman@example.com', password = 'GoodPass1') {
+function fillAndSubmit(email = 'aiman@example.com', password = 'GoodPass1'): void {
   fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
     target: { value: email },
   });
