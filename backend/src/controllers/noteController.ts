@@ -6,9 +6,15 @@ import {
   deleteNote,
   getNote,
   listNotes,
+  patchNote,
   updateNote,
 } from '../services/noteService';
-import { createNoteSchema, parseNoteId, updateNoteSchema } from '../validation/noteSchemas';
+import {
+  createNoteSchema,
+  parseNoteId,
+  patchNoteSchema,
+  updateNoteSchema,
+} from '../validation/noteSchemas';
 import { parseBody } from '../validation/parseBody';
 
 export const postNote: RequestHandler = async (req, res, next): Promise<void> => {
@@ -61,6 +67,22 @@ export const putNote: RequestHandler = async (req, res, next): Promise<void> => 
     const noteId = parseNoteId(req.params['id']);
     const input = parseBody(updateNoteSchema, req.body);
     const note = await updateNote(req.log, userId, noteId, input);
+    res.status(200).json({
+      success: true,
+      message: 'Note updated successfully',
+      data: { note },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const patchOneNote: RequestHandler = async (req, res, next): Promise<void> => {
+  try {
+    const { id: userId } = requireAuthenticatedUser(req);
+    const noteId = parseNoteId(req.params['id']);
+    const input = parseBody(patchNoteSchema, req.body);
+    const note = await patchNote(req.log, userId, noteId, input);
     res.status(200).json({
       success: true,
       message: 'Note updated successfully',

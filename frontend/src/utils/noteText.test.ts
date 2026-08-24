@@ -1,7 +1,9 @@
 import {
+  TEXT_COLORS,
   countCharacters,
   countWords,
   firstNameOf,
+  formatJoined,
   formatUpdated,
   greetingFor,
   plural,
@@ -19,6 +21,52 @@ describe('sanitizeHtml', () => {
   it('keeps headings, quotes and both list kinds', () => {
     const html = '<h2>Two</h2><h3>Three</h3><blockquote>quoted</blockquote><ol><li>first</li></ol>';
     expect(sanitizeHtml(html)).toBe(html);
+  });
+
+  describe('text colour', () => {
+    it('keeps a colour the toolbar can produce', () => {
+      const html = '<p><font color="#c0392b">warning</font></p>';
+      expect(sanitizeHtml(html)).toBe(html);
+    });
+
+    it('keeps every colour in the palette', () => {
+      for (const colour of TEXT_COLORS) {
+        const html = `<p><font color="${colour.value}">text</font></p>`;
+        expect(sanitizeHtml(html)).toBe(html);
+      }
+    });
+
+    // Markup can ask for any colour at all, and a note is put back into the
+    // page as HTML, so only the six the toolbar offers are trusted.
+    it('drops a colour that is not in the palette', () => {
+      expect(sanitizeHtml('<p><font color="#ff00ff">loud</font></p>')).toBe(
+        '<p><font>loud</font></p>',
+      );
+    });
+
+    it('drops a colour written as a name or a function', () => {
+      expect(sanitizeHtml('<p><font color="red">a</font></p>')).toBe('<p><font>a</font></p>');
+      expect(sanitizeHtml('<p><font color="rgb(1,2,3)">b</font></p>')).toBe(
+        '<p><font>b</font></p>',
+      );
+    });
+
+    it('matches the palette whatever the case', () => {
+      expect(sanitizeHtml('<p><font color="#C0392B">up</font></p>')).toBe(
+        '<p><font color="#C0392B">up</font></p>',
+      );
+    });
+
+    // Allowing the attribute at all must not let it land on other tags
+    it('does not let colour ride on anything but a font tag', () => {
+      expect(sanitizeHtml('<p color="#c0392b">hi</p>')).toBe('<p>hi</p>');
+    });
+
+    it('still strips a handler hiding on a coloured tag', () => {
+      expect(sanitizeHtml('<font color="#c0392b" onclick="go()">x</font>')).toBe(
+        '<font color="#c0392b">x</font>',
+      );
+    });
   });
 
   // A note is put back into the page when it is opened, so anything that
@@ -163,5 +211,21 @@ describe('formatUpdated', () => {
 
   it('returns nothing when the date makes no sense', () => {
     expect(formatUpdated('not a date')).toBe('');
+  });
+});
+
+describe('formatJoined', () => {
+  it('gives the full date without a clock', () => {
+    const joined = formatJoined('2026-03-12T09:30:00.000Z');
+
+    expect(joined).toContain('2026');
+    expect(joined).toMatch(/March/);
+    expect(joined).not.toMatch(/:/);
+  });
+
+  // The value comes from the server, so a broken one must not print
+  // "Invalid Date" onto the page
+  it('gives nothing back for a date it cannot read', () => {
+    expect(formatJoined('not a date')).toBe('');
   });
 });

@@ -11,6 +11,7 @@ const ALLOWED_TAGS = [
   'em',
   'u',
   's',
+  'font',
   'strike',
   'blockquote',
   'h1',
@@ -21,8 +22,38 @@ const ALLOWED_TAGS = [
   'li',
 ];
 
+// The toolbar can only produce these six, so the cleaner refuses every other
+// colour instead of trusting whatever the markup asks for. Both sides read
+// this list, so they cannot drift apart.
+export const TEXT_COLORS = [
+  { label: 'Default', value: '#1b2430' },
+  { label: 'Red', value: '#c0392b' },
+  { label: 'Amber', value: '#d97706' },
+  { label: 'Green', value: '#15803d' },
+  { label: 'Blue', value: '#2563eb' },
+  { label: 'Purple', value: '#7048e8' },
+];
+
+const allowedColors = TEXT_COLORS.map((colour) => colour.value);
+
+function keepKnownColors(html: string): string {
+  const holder = document.createElement('div');
+  holder.innerHTML = html;
+
+  for (const element of Array.from(holder.querySelectorAll('[color]'))) {
+    const colour = element.getAttribute('color')?.toLowerCase() ?? '';
+
+    if (element.tagName !== 'FONT' || !allowedColors.includes(colour)) {
+      element.removeAttribute('color');
+    }
+  }
+
+  return holder.innerHTML;
+}
+
 export function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR: [] });
+  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR: ['color'] });
+  return keepKnownColors(clean);
 }
 
 // Card previews show text rather than markup.
@@ -98,6 +129,21 @@ export function greetingFor(time: TimeOfDay): string {
     return 'Good afternoon';
   }
   return 'Good evening';
+}
+
+// A note shows the time because it changes through the day. A join date
+// does not, so it gets the full date and no clock.
+export function formatJoined(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 export function countWords(html: string): number {

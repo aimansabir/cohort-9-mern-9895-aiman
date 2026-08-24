@@ -55,9 +55,15 @@ export function NoteIcon(): ReactElement {
   );
 }
 
-export function StarIcon(): ReactElement {
+export function StarIcon({ filled = false }: { filled?: boolean } = {}): ReactElement {
   return (
-    <svg {...base} width={13} height={13} aria-hidden="true">
+    <svg
+      {...base}
+      width={13}
+      height={13}
+      aria-hidden="true"
+      fill={filled ? 'currentColor' : 'none'}
+    >
       <path d="M12 3l2.9 5.9 6.1.9-4.5 4.3 1.1 6.4-5.6-3-5.6 3 1.1-6.4L3 9.8l6.1-.9L12 3z" />
     </svg>
   );
@@ -265,3 +271,41 @@ export function ChevronDownIcon(): ReactElement {
   );
 }
 
+export function DownloadIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M12 3v12M7 10l5 5 5-5" />
+      <path d="M4 20h16" />
+    </svg>
+  );
+}
+
+export function UploadIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <path d="M12 16V4M7 9l5-5 5 5" />
+      <path d="M4 20h16" />
+    </svg>
+  );
+}
+
+export function UserIcon(): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+    </svg>
+  );
+}
+
+export function FocusIcon({ on = false }: { on?: boolean } = {}): ReactElement {
+  return (
+    <svg {...base} width={15} height={15} aria-hidden="true">
+      {on ? (
+        <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+      ) : (
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      )}
+    </svg>
+  );
+}

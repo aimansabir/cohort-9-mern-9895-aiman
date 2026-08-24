@@ -4,6 +4,7 @@ import {
   deleteOneNote,
   getNotes,
   getOneNote,
+  patchOneNote,
   postNote,
   putNote,
 } from '../controllers/noteController';
@@ -19,6 +20,7 @@ router.post('/', postNote);
 router.get('/', getNotes);
 router.get('/:id', getOneNote);
 router.put('/:id', putNote);
+router.patch('/:id', patchOneNote);
 router.delete('/:id', deleteOneNote);
 
 export default router;

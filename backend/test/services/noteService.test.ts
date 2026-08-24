@@ -25,6 +25,8 @@ const aRow: NoteRecord = {
   user_id: 5,
   title: 'Groceries',
   content: '<p>milk</p>',
+  is_favourite: 0,
+  label: '',
   created_at: new Date('2026-01-02T03:04:05Z'),
   updated_at: new Date('2026-01-02T03:04:05Z'),
 };
@@ -51,6 +53,21 @@ describe('noteService', () => {
       expect(note.updatedAt).to.equal('2026-01-02T03:04:05.000Z');
     });
 
+    it('turns the stored 1 or 0 into a real boolean', async () => {
+      queueResults(rowsResult([{ ...aRow, is_favourite: 1 }]));
+      expect((await getNote(log, 5, 1)).isFavourite).to.equal(true);
+    });
+
+    it('reports a note that is not starred as false', async () => {
+      queueResults(rowsResult([{ ...aRow, is_favourite: 0 }]));
+      expect((await getNote(log, 5, 1)).isFavourite).to.equal(false);
+    });
+
+    it('passes the label straight through', async () => {
+      queueResults(rowsResult([{ ...aRow, label: 'important' }]));
+      expect((await getNote(log, 5, 1)).label).to.equal('important');
+    });
+
     it('keeps the fields the client actually needs', async () => {
       queueResults(rowsResult([aRow]));
       const note = await getNote(log, 5, 1);
@@ -59,6 +76,8 @@ describe('noteService', () => {
         'content',
         'createdAt',
         'id',
+        'isFavourite',
+        'label',
         'title',
         'updatedAt',
       ]);
@@ -141,7 +160,7 @@ describe('noteService', () => {
   describe('createNote', () => {
     it('returns the stored note', async () => {
       queueResults(writeResult({ insertId: 1 }), rowsResult([aRow]));
-      const note = await createNote(log, 5, { title: 'Groceries', content: '<p>milk</p>' });
+      const note = await createNote(log, 5, { title: 'Groceries', content: '<p>milk</p>', label: '' as const, isFavourite: false });
 
       expect(note.id).to.equal(1);
       expect(note.title).to.equal('Groceries');

@@ -4,6 +4,7 @@ import { AppError } from '../../src/utils/AppError';
 import {
   createNoteSchema,
   parseNoteId,
+  patchNoteSchema,
   updateNoteSchema,
 } from '../../src/validation/noteSchemas';
 
@@ -102,5 +103,85 @@ describe('updateNoteSchema', () => {
 
   it('rejects unexpected keys', () => {
     expect(() => updateNoteSchema.parse({ title: 'x', content: '', id: 3 })).to.throw();
+  });
+});
+
+describe('labels and favourites', () => {
+  const aNote = { title: 'Groceries', content: '<p>milk</p>' };
+
+  describe('createNoteSchema', () => {
+    it('leaves a new note unlabelled and unstarred by default', () => {
+      const parsed = createNoteSchema.parse(aNote);
+
+      expect(parsed.label).to.equal('');
+      expect(parsed.isFavourite).to.equal(false);
+    });
+
+    ['important', 'Study Group', 'exam-revision', 'Ideas 2026'].forEach((label) => {
+      it(`accepts the category ${label}`, () => {
+        expect(createNoteSchema.parse({ ...aNote, label }).label).to.equal(label);
+      });
+    });
+
+    it('trims a category before storing it', () => {
+      expect(createNoteSchema.parse({ ...aNote, label: '  Study  ' }).label).to.equal('Study');
+    });
+
+    // The column is VARCHAR(20), so a longer name would be cut off silently
+    it('refuses a category longer than the column holds', () => {
+      expect(() => createNoteSchema.parse({ ...aNote, label: 'a'.repeat(21) })).to.throw();
+    });
+
+    it('refuses punctuation that has no business in a category', () => {
+      expect(() => createNoteSchema.parse({ ...aNote, label: '<script>' })).to.throw();
+      expect(() => createNoteSchema.parse({ ...aNote, label: 'a/b' })).to.throw();
+    });
+
+    it('refuses a category that is not text at all', () => {
+      expect(() => createNoteSchema.parse({ ...aNote, label: 12 })).to.throw();
+    });
+
+    it('refuses a favourite that is not a boolean', () => {
+      expect(() => createNoteSchema.parse({ ...aNote, isFavourite: 'yes' })).to.throw();
+    });
+  });
+
+  describe('updateNoteSchema', () => {
+    // This is the whole reason these two are optional rather than defaulted.
+    // The editor only sends a title and content, so if they defaulted here,
+    // saving an edit would quietly unstar the note and drop its label.
+    it('leaves the label and the star untouched when they are not sent', () => {
+      const parsed = updateNoteSchema.parse(aNote);
+
+      expect(parsed.label).to.equal(undefined);
+      expect(parsed.isFavourite).to.equal(undefined);
+    });
+
+    it('still takes them when they are sent', () => {
+      const parsed = updateNoteSchema.parse({ ...aNote, label: 'work', isFavourite: true });
+
+      expect(parsed.label).to.equal('work');
+      expect(parsed.isFavourite).to.equal(true);
+    });
+  });
+
+  describe('patchNoteSchema', () => {
+    it('takes a star on its own', () => {
+      expect(patchNoteSchema.parse({ isFavourite: true }).isFavourite).to.equal(true);
+    });
+
+    it('takes a label on its own', () => {
+      expect(patchNoteSchema.parse({ label: 'Study' }).label).to.equal('Study');
+    });
+
+    it('refuses a body that asks for no change at all', () => {
+      expect(() => patchNoteSchema.parse({})).to.throw();
+    });
+
+    // The text goes through the full update, so it must not sneak in here
+    it('refuses a title or content', () => {
+      expect(() => patchNoteSchema.parse({ title: 'New' })).to.throw();
+      expect(() => patchNoteSchema.parse({ isFavourite: true, content: '<p>x</p>' })).to.throw();
+    });
   });
 });

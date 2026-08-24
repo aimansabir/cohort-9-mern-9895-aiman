@@ -21,6 +21,8 @@ const aRow: NoteRecord = {
   user_id: 5,
   title: 'Groceries',
   content: '<p>milk</p>',
+  is_favourite: 0,
+  label: '',
   created_at: new Date('2026-01-01T00:00:00Z'),
   updated_at: new Date('2026-01-01T00:00:00Z'),
 };
@@ -98,29 +100,88 @@ describe('noteRepository', () => {
     });
   });
 
+  describe('changing only some fields', () => {
+    it('sets just the column it was given', async () => {
+      queueResults(writeResult({ affectedRows: 1 }), rowsResult([aRow]));
+      await updateNoteByIdAndUserId(1, 5, { isFavourite: true });
+
+      expect(queries[0]?.sql.replace(/\s+/g, ' ')).to.contain('SET is_favourite = :isFavourite');
+      expect(queries[0]?.sql).to.not.contain('title =');
+      expect(queries[0]?.sql).to.not.contain('content =');
+    });
+
+    it('sends a favourite as the 1 or 0 the column holds', async () => {
+      queueResults(writeResult({ affectedRows: 1 }), rowsResult([aRow]));
+      await updateNoteByIdAndUserId(1, 5, { isFavourite: true });
+
+      expect(queries[0]?.params).to.deep.equal({ id: 1, userId: 5, isFavourite: 1 });
+    });
+
+    it('sets a label on its own', async () => {
+      queueResults(writeResult({ affectedRows: 1 }), rowsResult([aRow]));
+      await updateNoteByIdAndUserId(1, 5, { label: 'important' });
+
+      expect(queries[0]?.params).to.deep.equal({ id: 1, userId: 5, label: 'important' });
+    });
+
+    // Starring a note is not writing in it, so it must not jump to the top of
+    // a list sorted by when it was last updated
+    it('leaves the timestamp alone when only the star changes', async () => {
+      queueResults(writeResult({ affectedRows: 1 }), rowsResult([aRow]));
+      await updateNoteByIdAndUserId(1, 5, { isFavourite: true });
+
+      expect(queries[0]?.sql.replace(/\s+/g, ' ')).to.contain('updated_at = updated_at');
+    });
+
+    it('lets the timestamp move when the text changes', async () => {
+      queueResults(writeResult({ affectedRows: 1 }), rowsResult([aRow]));
+      await updateNoteByIdAndUserId(1, 5, { title: 'New', content: '<p>x</p>' });
+
+      expect(queries[0]?.sql).to.not.contain('updated_at = updated_at');
+    });
+
+    it('does not run an update at all when nothing was asked for', async () => {
+      queueResults(rowsResult([aRow]));
+      await updateNoteByIdAndUserId(1, 5, {});
+
+      expect(queries).to.have.length(1);
+      expect(queries[0]?.sql.replace(/\s+/g, ' ')).to.contain('SELECT');
+    });
+  });
+
   describe('createNote', () => {
     it('inserts with the user id from the caller, never from the body', async () => {
       queueResults(writeResult({ insertId: 11 }), rowsResult([{ ...aRow, id: 11 }]));
-      await createNote({ userId: 5, title: 'Groceries', content: '<p>milk</p>' });
+      await createNote({
+        userId: 5,
+        title: 'Groceries',
+        content: '<p>milk</p>',
+        label: '',
+        isFavourite: false,
+      });
 
-      expect(queries[0]?.sql.replace(/\s+/g, ' ')).to.contain('INSERT INTO notes (user_id, title, content)');
+      expect(queries[0]?.sql.replace(/\s+/g, ' ')).to.contain(
+        'INSERT INTO notes (user_id, title, content, label, is_favourite)',
+      );
       expect(queries[0]?.params).to.deep.equal({
         userId: 5,
         title: 'Groceries',
         content: '<p>milk</p>',
+        label: '',
+        isFavourite: 0,
       });
     });
 
     it('returns the note it read back', async () => {
       queueResults(writeResult({ insertId: 11 }), rowsResult([{ ...aRow, id: 11 }]));
-      const created = await createNote({ userId: 5, title: 'Groceries', content: '' });
+      const created = await createNote({ userId: 5, title: 'Groceries', content: '', label: '', isFavourite: false });
       expect(created.id).to.equal(11);
     });
 
     it('complains if the row cannot be read back', async () => {
       queueResults(writeResult({ insertId: 11 }), rowsResult([]));
       try {
-        await createNote({ userId: 5, title: 'Groceries', content: '' });
+        await createNote({ userId: 5, title: 'Groceries', content: '', label: '', isFavourite: false });
         expect.fail('should have thrown');
       } catch (error) {
         expect((error as Error).message).to.contain('could not be read back');

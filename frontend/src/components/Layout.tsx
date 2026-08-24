@@ -4,7 +4,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
 import { firstNameOf } from '../utils/noteText';
-import { ChevronDownIcon, LogOutIcon } from './icons';
+import { ChevronDownIcon, LogOutIcon, UserIcon } from './icons';
 
 export default function Layout(): ReactElement {
   const { user, logout } = useAuth();
@@ -73,10 +73,20 @@ export default function Layout(): ReactElement {
                 <div className="nav-dropdown" role="menu">
                   <span className="nav-dropdown-email">{user.email}</span>
 
+                  <Link
+                    to="/account"
+                    role="menuitem"
+                    className="nav-dropdown-item"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <UserIcon />
+                    Account
+                  </Link>
+
                   <button
                     type="button"
                     role="menuitem"
-                    className="nav-dropdown-item"
+                    className="nav-dropdown-item nav-dropdown-logout"
                     onClick={() => void handleLogout()}
                   >
                     <LogOutIcon />
