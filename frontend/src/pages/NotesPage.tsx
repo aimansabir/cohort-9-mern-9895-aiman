@@ -46,6 +46,15 @@ function messageFor(error: unknown, fallback: string): string {
 
 type SortOrder = 'updated' | 'created' | 'title';
 
+// A category can be called anything, "favourites" included, so the filter
+// says what kind it is rather than relying on a name nobody would pick.
+type NoteFilter =
+  | { kind: 'all' }
+  | { kind: 'favourites' }
+  | { kind: 'category'; name: string };
+
+const ALL_NOTES: NoteFilter = { kind: 'all' };
+
 function newestFirst(notes: Note[]): Note[] {
   return [...notes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
@@ -101,9 +110,10 @@ export default function NotesPage(): ReactElement {
 
   const [query, setQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('updated');
-  // '' is every note, 'favourites' is the starred ones, anything else is a
-  // category id
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState<NoteFilter>(ALL_NOTES);
+  // Two quick clicks would otherwise both read the same starting value and
+  // send the same request twice, leaving the note starred after two toggles.
+  const [busyFavourites, setBusyFavourites] = useState<number[]>([]);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const categoryMenuRef = useRef<HTMLDivElement>(null);
 
@@ -119,10 +129,13 @@ export default function NotesPage(): ReactElement {
     const searched = term ? notes.filter((note) => matchesQuery(note, term)) : notes;
 
     const matched = searched.filter((note) => {
-      if (filter === '') {
+      if (filter.kind === 'all') {
         return true;
       }
-      return filter === 'favourites' ? note.isFavourite : sameCategory(note.label, filter);
+      if (filter.kind === 'favourites') {
+        return note.isFavourite;
+      }
+      return sameCategory(note.label, filter.name);
     });
 
     return sortNotes(matched, sortOrder);
@@ -184,9 +197,11 @@ export default function NotesPage(): ReactElement {
   }, [isCategoryMenuOpen]);
 
   async function handleToggleFavourite(note: Note): Promise<void> {
-    if (!token) {
+    if (!token || busyFavourites.includes(note.id)) {
       return;
     }
+
+    setBusyFavourites((current) => [...current, note.id]);
 
     try {
       const updated = await noteService.setNoteFlags(token, note.id, {
@@ -196,6 +211,8 @@ export default function NotesPage(): ReactElement {
       setNotes((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch (error) {
       setListError(messageFor(error, 'Could not change that note'));
+    } finally {
+      setBusyFavourites((current) => current.filter((id) => id !== note.id));
     }
   }
 
@@ -231,23 +248,29 @@ export default function NotesPage(): ReactElement {
       }
 
       // Each note is its own request, so one that the server turns down does
-      // not lose the rest of the file.
-      let added = 0;
+      // not lose the rest of the file. The notes that came back are kept, so
+      // nothing has to be read back afterwards and a failure there cannot
+      // hide an import that actually worked.
+      const created: Note[] = [];
       for (const item of incoming) {
         try {
-          await noteService.createNote(token, item.title, item.content, {
-            label: item.label,
-            isFavourite: item.isFavourite,
-          });
-          added += 1;
+          created.push(
+            await noteService.createNote(token, item.title, item.content, {
+              label: item.label,
+              isFavourite: item.isFavourite,
+            }),
+          );
         } catch {
           // counted as skipped below
         }
       }
 
-      hasLocalChanges.current = true;
-      setNotes(newestFirst(await noteService.listNotes(token)));
+      if (created.length > 0) {
+        hasLocalChanges.current = true;
+        setNotes((current) => newestFirst([...created, ...current]));
+      }
 
+      const added = created.length;
       const missed = incoming.length - added + skipped;
       setTransferMessage(
         missed === 0
@@ -341,8 +364,8 @@ export default function NotesPage(): ReactElement {
           <nav className="side-nav">
             <button
               type="button"
-              className={`side-link${filter === '' ? ' is-active' : ''}`}
-              onClick={() => setFilter('')}
+              className={`side-link${filter.kind === 'all' ? ' is-active' : ''}`}
+              onClick={() => setFilter(ALL_NOTES)}
             >
               <NoteIcon />
               All notes
@@ -351,10 +374,10 @@ export default function NotesPage(): ReactElement {
 
             <button
               type="button"
-              className={`side-link${filter === 'favourites' ? ' is-active' : ''}`}
-              onClick={() => setFilter('favourites')}
+              className={`side-link${filter.kind === 'favourites' ? ' is-active' : ''}`}
+              onClick={() => setFilter({ kind: 'favourites' })}
             >
-              <StarIcon filled={filter === 'favourites'} />
+              <StarIcon filled={filter.kind === 'favourites'} />
               Favourites
               <span className="side-count">
                 {notes.filter((note) => note.isFavourite).length}
@@ -365,7 +388,7 @@ export default function NotesPage(): ReactElement {
           <div className="side-dropdown" ref={categoryMenuRef}>
             <button
               type="button"
-              className={`side-link${filter !== '' && filter !== 'favourites' ? ' is-active' : ''}`}
+              className={`side-link${filter.kind === 'category' ? ' is-active' : ''}`}
               aria-expanded={isCategoryMenuOpen}
               aria-haspopup="menu"
               onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
@@ -374,12 +397,12 @@ export default function NotesPage(): ReactElement {
                 className="side-dot"
                 style={{
                   backgroundColor:
-                    filter !== '' && filter !== 'favourites'
-                      ? categoryColor(filter)
+                    filter.kind === 'category'
+                      ? categoryColor(filter.name)
                       : 'var(--border)',
                 }}
               />
-              {filter !== '' && filter !== 'favourites' ? filter : 'Categories'}
+              {filter.kind === 'category' ? filter.name : 'Categories'}
               <span className="side-caret">
                 <ChevronDownIcon />
               </span>
@@ -397,9 +420,13 @@ export default function NotesPage(): ReactElement {
                       key={name}
                       type="button"
                       role="menuitem"
-                      className={`side-menu-item${filter === name ? ' is-active' : ''}`}
+                      className={`side-menu-item${
+                        filter.kind === 'category' && sameCategory(filter.name, name)
+                          ? ' is-active'
+                          : ''
+                      }`}
                       onClick={() => {
-                        setFilter(name);
+                        setFilter({ kind: 'category', name });
                         setIsCategoryMenuOpen(false);
                       }}
                     >
@@ -552,6 +579,7 @@ export default function NotesPage(): ReactElement {
                 onDelete={() => void handleDelete(note.id)}
                 onExport={() => exportOne(note)}
                 onToggleFavourite={() => void handleToggleFavourite(note)}
+                isFavouriteBusy={busyFavourites.includes(note.id)}
                 showCreated={sortOrder === 'created'}
               />
             ))}

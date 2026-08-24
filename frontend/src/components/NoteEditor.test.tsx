@@ -80,6 +80,18 @@ describe('NoteEditor', () => {
       expect(screen.getByText('Personal')).toHaveAttribute('aria-pressed', 'true');
     });
 
+    // Notes saved before categories were free text hold a lowercase name, so
+    // the Important chip has to look chosen for a note labelled important
+    it('marks the suggested chip for a note saved under the old lowercase name', () => {
+      renderEditor({ ...existing, label: 'important' });
+      expect(screen.getByText('Important')).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('does not offer the old name as a separate chip', () => {
+      renderEditor({ ...existing, label: 'important' });
+      expect(screen.queryByText('important')).not.toBeInTheDocument();
+    });
+
     it('starts on none for a new note', () => {
       renderEditor(null);
       expect(screen.getByText('None')).toHaveAttribute('aria-pressed', 'true');

@@ -9,6 +9,7 @@ import {
   SUGGESTED_CATEGORIES,
   categoryColor,
   isValidCategory,
+  sameCategory,
 } from '../utils/noteCategories';
 import { NOTE_TEMPLATES } from '../utils/noteTemplates';
 import type { NoteTemplate } from '../utils/noteTemplates';
@@ -72,9 +73,7 @@ export default function NoteEditor({
 
   // A category the note already carries is offered alongside the suggestions,
   // so opening an old note does not lose the name it was filed under.
-  const offered = SUGGESTED_CATEGORIES.some(
-    (name) => name.toLowerCase() === label.trim().toLowerCase(),
-  )
+  const offered = SUGGESTED_CATEGORIES.some((name) => sameCategory(name, label))
     ? SUGGESTED_CATEGORIES
     : [...SUGGESTED_CATEGORIES, label].filter((name) => name !== '');
 
@@ -183,8 +182,8 @@ export default function NoteEditor({
               <button
                 key={name}
                 type="button"
-                className={`category-chip${label === name ? ' is-active' : ''}`}
-                aria-pressed={label === name}
+                className={`category-chip${sameCategory(label, name) ? ' is-active' : ''}`}
+                aria-pressed={sameCategory(label, name)}
                 onClick={() => setLabel(name)}
               >
                 <span className="category-dot" style={{ backgroundColor: categoryColor(name) }} />

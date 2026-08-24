@@ -15,6 +15,7 @@ interface NoteCardProps {
   // Sorting by when a note was made should show that date, otherwise the two
   // orders look identical for any note that has never been edited.
   showCreated?: boolean;
+  isFavouriteBusy?: boolean;
 }
 
 export default function NoteCard({
@@ -24,6 +25,7 @@ export default function NoteCard({
   onExport,
   onToggleFavourite,
   showCreated = false,
+  isFavouriteBusy = false,
 }: NoteCardProps): ReactElement {
   const [isConfirming, setIsConfirming] = useState(false);
   const preview = toPlainText(note.content);
@@ -61,6 +63,7 @@ export default function NoteCard({
             type="button"
             className={`icon-button note-star${note.isFavourite ? ' is-on' : ''}`}
             onClick={onToggleFavourite}
+            disabled={isFavouriteBusy}
             aria-pressed={note.isFavourite}
             aria-label={
               note.isFavourite ? `Unstar ${note.title}` : `Star ${note.title}`
