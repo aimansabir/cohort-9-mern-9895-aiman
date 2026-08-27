@@ -32,9 +32,14 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      # npm install, not npm ci. oxlint depends on optional wasm bindings
+      # whose nested @emnapi versions npm resolves differently on linux than
+      # on windows, so no single lockfile satisfies npm ci on both. Pinning
+      # them with an override was tried and did not help. The backend has no
+      # such dependency and still uses npm ci.
       - name: Install frontend
         working-directory: frontend
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Backend tests with coverage
         working-directory: backend
