@@ -1,7 +1,7 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 import { getPool } from '../config/database';
-import type { NewNote, NoteRecord, UpdateNote } from '../types/note';
+import type { NewNote, NoteChanges, NoteRecord } from '../types/note';
 
 interface NoteRow extends RowDataPacket, NoteRecord {}
 
@@ -13,9 +13,15 @@ export async function createNote(note: NewNote): Promise<NoteRecord> {
   let insertId: number;
   try {
     const [result] = await getPool().execute<ResultSetHeader>(
-      `INSERT INTO notes (user_id, title, content)
-       VALUES (:userId, :title, :content)`,
-      { userId: note.userId, title: note.title, content: note.content },
+      `INSERT INTO notes (user_id, title, content, label, is_favourite)
+       VALUES (:userId, :title, :content, :label, :isFavourite)`,
+      {
+        userId: note.userId,
+        title: note.title,
+        content: note.content,
+        label: note.label,
+        isFavourite: note.isFavourite ? 1 : 0,
+      },
     );
     insertId = result.insertId;
   } catch (error) {
@@ -40,7 +46,7 @@ export async function createNote(note: NewNote): Promise<NoteRecord> {
 export async function findNotesByUserId(userId: number): Promise<NoteRecord[]> {
   try {
     const [rows] = await getPool().execute<NoteRow[]>(
-      `SELECT id, user_id, title, content, created_at, updated_at
+      `SELECT id, user_id, title, content, is_favourite, label, created_at, updated_at
          FROM notes
         WHERE user_id = :userId
         ORDER BY updated_at DESC, id DESC`,
@@ -60,7 +66,7 @@ export async function findNoteByIdAndUserId(
 ): Promise<NoteRecord | undefined> {
   try {
     const [rows] = await getPool().execute<NoteRow[]>(
-      `SELECT id, user_id, title, content, created_at, updated_at
+      `SELECT id, user_id, title, content, is_favourite, label, created_at, updated_at
          FROM notes
         WHERE id = :id
           AND user_id = :userId
@@ -73,19 +79,48 @@ export async function findNoteByIdAndUserId(
   }
 }
 
+// Column names are read from this table and never from the request, so the
+// SET clause cannot be shaped by anything a user sends.
+const columnFor: [keyof NoteChanges, string][] = [
+  ['title', 'title'],
+  ['content', 'content'],
+  ['label', 'label'],
+  ['isFavourite', 'is_favourite'],
+];
+
 export async function updateNoteByIdAndUserId(
   id: number,
   userId: number,
-  data: UpdateNote,
+  changes: NoteChanges,
 ): Promise<NoteRecord | undefined> {
+  const assignments: string[] = [];
+  const params: Record<string, string | number> = { id, userId };
+
+  for (const [field, column] of columnFor) {
+    const value = changes[field];
+    if (value !== undefined) {
+      assignments.push(`${column} = :${field}`);
+      params[field] = typeof value === 'boolean' ? Number(value) : value;
+    }
+  }
+
+  if (assignments.length === 0) {
+    return findNoteByIdAndUserId(id, userId);
+  }
+
+  // Starring a note or recolouring it is not writing in it, so the timestamp
+  // only moves when the text does.
+  if (changes.title === undefined && changes.content === undefined) {
+    assignments.push('updated_at = updated_at');
+  }
+
   try {
     const [result] = await getPool().execute<ResultSetHeader>(
       `UPDATE notes
-          SET title   = :title,
-              content = :content
+          SET ${assignments.join(', ')}
         WHERE id      = :id
           AND user_id = :userId`,
-      { title: data.title, content: data.content, id, userId },
+      params,
     );
     if (result.affectedRows === 0) {
       return undefined;

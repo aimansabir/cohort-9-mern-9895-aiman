@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
+import AccountPage from '../pages/AccountPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import NotesPage from '../pages/NotesPage';
@@ -18,6 +19,7 @@ export default function AppRoutes(): ReactElement {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/notes" element={<NotesPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Route>
       </Route>
     </Routes>

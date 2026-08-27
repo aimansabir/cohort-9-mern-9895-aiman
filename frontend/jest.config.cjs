@@ -7,6 +7,8 @@ module.exports = {
     // config/env reads import.meta, which Jest cannot parse, so tests get a
     // plain stand in for it
     '^.+/config/env$': '<rootDir>/src/test/envStub.ts',
+    // Vite turns an image import into a url, Jest needs telling
+    '\.(webp|png|jpe?g|gif|svg)$': '<rootDir>/src/test/fileStub.ts',
   },
   transform: {
     '^.+\\.tsx?$': [

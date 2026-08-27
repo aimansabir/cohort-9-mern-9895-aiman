@@ -1118,6 +1118,19 @@ form button[type='submit']:disabled {
   color: var(--primary);
 }
 
+.note-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.note-export {
+  border: 1px solid var(--border);
+}
+
+.note-export:hover {
+  border-color: var(--primary);
+}
+
 .note-trash {
   border: 1px solid var(--border);
 }
@@ -1294,6 +1307,41 @@ form button[type='submit']:disabled {
   overflow: hidden;
 }
 
+/* Focus mode fills the screen and puts away everything that is not the
+   words, so the note is all that is left. */
+.modal.is-focus {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  border-radius: 0;
+}
+
+.modal.is-focus form {
+  /* the base rule caps the form at 86vh, which would leave a dead strip
+     under the footer once the dialog fills the screen */
+  height: 100%;
+  max-height: none;
+}
+
+.modal.is-focus .template-row {
+  display: none;
+}
+
+.modal.is-focus .modal-body {
+  padding: 1.5rem clamp(1.5rem, 50vw - 22rem, 20rem);
+}
+
+.modal.is-focus .editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.modal.is-focus .editor-box {
+  flex: 1;
+}
+
 .modal::backdrop {
   background-color: rgba(35, 24, 70, 0.35);
   backdrop-filter: blur(3px);
@@ -1397,6 +1445,23 @@ form button[type='submit']:disabled {
 .editor-group + .editor-group {
   padding-left: 0.5rem;
   border-left: 1px solid var(--border);
+}
+
+.editor-colors {
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.editor-toolbar .editor-swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1px solid rgba(27, 36, 48, 0.18);
+  border-radius: 50%;
+}
+
+.editor-toolbar .editor-swatch:hover {
+  border-color: var(--text);
+  transform: scale(1.15);
 }
 
 .editor-text-button {
@@ -1550,10 +1615,20 @@ form button[type='submit']:disabled {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  width: 100%;
   padding: 0.62rem 0.7rem;
+  /* these are buttons now, so the default border and background have to go */
+  border: none;
   border-radius: 10px;
+  background: none;
   color: var(--muted);
   font-size: 0.92rem;
+  text-align: left;
+}
+
+.side-link:hover:not(.is-active) {
+  background-color: #f4f1ff;
+  color: var(--primary);
 }
 
 .side-link.is-active {
@@ -1631,9 +1706,15 @@ form button[type='submit']:disabled {
   color: var(--text);
   font-size: 0.92rem;
   text-align: left;
+  text-decoration: none;
 }
 
 .nav-dropdown-item:hover {
+  background-color: #efeaff;
+  color: var(--primary);
+}
+
+.nav-dropdown-logout:hover {
   background-color: var(--danger-bg);
   color: var(--danger);
 }
@@ -1654,6 +1735,312 @@ form button[type='submit']:disabled {
   color: #ffffff;
   font-weight: 700;
   font-size: 0.9rem;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.category-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.category-chip.is-active {
+  border-color: var(--primary);
+  background-color: #efeaff;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.category-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}
+
+.side-dropdown {
+  position: relative;
+}
+
+.side-caret {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.side-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background-color: var(--surface);
+  box-shadow: 0 14px 30px rgba(53, 38, 105, 0.16);
+}
+
+.side-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.side-menu-item:hover {
+  background-color: #f4f1ff;
+  color: var(--primary);
+}
+
+.side-menu-item.is-active {
+  background-color: #efeaff;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.side-menu-empty {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.category-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.category-new input {
+  width: 9rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+
+.category-chip:disabled {
+  opacity: 0.5;
+}
+
+.side-dot {
+  flex-shrink: 0;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+}
+
+.note-card.has-label {
+  border-left-width: 4px;
+}
+
+.note-label {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.9rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.note-star {
+  border: 1px solid var(--border);
+}
+
+.note-star:hover {
+  border-color: #d97706;
+  color: #d97706;
+}
+
+.note-star.is-on {
+  border-color: #d97706;
+  color: #d97706;
+}
+
+.template-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.template-label {
+  margin-right: 0.2rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.template-chip {
+  padding: 0.34rem 0.72rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.template-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.template-chip.is-active {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.account {
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.account-head {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.5rem 1.6rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background-color: var(--surface);
+}
+
+.account-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 3.8rem;
+  height: 3.8rem;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.account-head h1 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.account-head p {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+
+.account-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0.9rem 0 0;
+}
+
+@media (max-width: 34rem) {
+  .account-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.account-stats > div {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background-color: var(--surface);
+}
+
+.account-stats dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.account-stats dd {
+  margin: 0.4rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.side-transfer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.side-heading {
+  padding: 0 0.7rem 0.45rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* the same shape as the nav links above, so the panel reads as one list */
+.side-action {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.62rem 0.7rem;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.92rem;
+  text-align: left;
+}
+
+.side-action:hover:not(:disabled) {
+  background-color: #efeaff;
+  color: var(--primary);
+}
+
+.side-action:disabled {
+  opacity: 0.55;
+}
+
+/* the button opens this, so it never needs to be seen */
+.side-file {
+  display: none;
+}
+
+.side-note {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 9px;
+  background-color: #efeaff;
+  color: var(--primary);
+  font-size: 0.76rem;
+  line-height: 1.35;
 }
 
 .side-logout {

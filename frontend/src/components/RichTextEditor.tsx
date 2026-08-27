@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ClipboardEvent, ReactElement } from 'react';
 
-import { sanitizeHtml } from '../utils/noteText';
+import { TEXT_COLORS, sanitizeHtml } from '../utils/noteText';
 import {
   BoldIcon,
   BulletListIcon,
@@ -123,6 +123,24 @@ export default function RichTextEditor({
     }
   }
 
+  // foreColor is asked for font tags rather than inline styles, because that
+  // is the shape the cleaner allows through.
+  function applyColor(value: string): void {
+    try {
+      document.execCommand('styleWithCSS', false, 'false');
+    } catch {
+      // not every browser exposes this, and font tags are the default anyway
+    }
+
+    document.execCommand('foreColor', false, value);
+
+    const box = boxRef.current;
+    if (box) {
+      box.focus();
+      onChange(box.innerHTML);
+    }
+  }
+
   function runCommand(tool: Tool): void {
     document.execCommand(tool.command, false, tool.argument);
 
@@ -161,6 +179,21 @@ export default function RichTextEditor({
             ))}
           </div>
         ))}
+
+        <div className="editor-group editor-colors">
+          {TEXT_COLORS.map((colour) => (
+            <button
+              key={colour.value}
+              type="button"
+              className="editor-swatch"
+              title={`${colour.label} text`}
+              aria-label={`${colour.label} text`}
+              style={{ backgroundColor: colour.value }}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => applyColor(colour.value)}
+            />
+          ))}
+        </div>
       </div>
 
       <div

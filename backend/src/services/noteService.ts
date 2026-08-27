@@ -9,8 +9,12 @@ import {
 } from '../repositories/noteRepository';
 import type { NoteRecord, PublicNote } from '../types/note';
 import { AppError } from '../utils/AppError';
-import { createNoteSchema, updateNoteSchema } from '../validation/noteSchemas';
-import type { CreateNoteInput, UpdateNoteInput } from '../validation/noteSchemas';
+import { createNoteSchema, patchNoteSchema, updateNoteSchema } from '../validation/noteSchemas';
+import type {
+  CreateNoteInput,
+  PatchNoteInput,
+  UpdateNoteInput,
+} from '../validation/noteSchemas';
 import { parseBody } from '../validation/parseBody';
 
 const NOTE_NOT_FOUND_MESSAGE = 'Note not found';
@@ -20,6 +24,9 @@ function toPublicNote(record: NoteRecord): PublicNote {
     id: record.id,
     title: record.title,
     content: record.content,
+    // the driver hands back 0 or 1 for a TINYINT
+    isFavourite: Boolean(record.is_favourite),
+    label: record.label,
     createdAt: record.created_at.toISOString(),
     updatedAt: record.updated_at.toISOString(),
   };
@@ -44,6 +51,8 @@ export async function createNote(
       userId,
       title: validated.title,
       content: validated.content,
+      label: validated.label,
+      isFavourite: validated.isFavourite,
     });
 
     log.info({ userId, noteId: record.id }, 'Note created');
@@ -86,9 +95,13 @@ export async function updateNote(
 ): Promise<PublicNote> {
   try {
     const validated = parseBody(updateNoteSchema, input);
+    // label and isFavourite are only passed on when the caller sent them, so
+    // editing the text on its own leaves the star and the colour alone.
     const record = await updateNoteByIdAndUserId(noteId, userId, {
       title: validated.title,
       content: validated.content,
+      label: validated.label,
+      isFavourite: validated.isFavourite,
     });
 
     if (record === undefined) {
@@ -99,6 +112,27 @@ export async function updateNote(
     return toPublicNote(record);
   } catch (error) {
     return rethrow(log, error, 'Updating a note failed unexpectedly');
+  }
+}
+
+export async function patchNote(
+  log: Logger,
+  userId: number,
+  noteId: number,
+  input: PatchNoteInput,
+): Promise<PublicNote> {
+  try {
+    const validated = parseBody(patchNoteSchema, input);
+    const record = await updateNoteByIdAndUserId(noteId, userId, validated);
+
+    if (record === undefined) {
+      throw new AppError(NOTE_NOT_FOUND_MESSAGE, 404);
+    }
+
+    log.info({ userId, noteId }, 'Note label or favourite changed');
+    return toPublicNote(record);
+  } catch (error) {
+    return rethrow(log, error, 'Changing a note label or favourite failed unexpectedly');
   }
 }
 
