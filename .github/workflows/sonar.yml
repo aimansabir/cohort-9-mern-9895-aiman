@@ -1,15 +1,18 @@
 name: SonarCloud
 
 on:
+  # Any branch, because the analysis has to run on the fork where the token
+  # lives. A pull request into the upstream repo runs there instead, and
+  # GitHub does not hand a fork's pull request the base repo's secrets.
   push:
-    branches: [develop, main]
   pull_request:
-    branches: [develop, main]
 
 jobs:
   analyse:
     name: Tests and analysis
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +44,8 @@ jobs:
         working-directory: frontend
         run: npm run test:coverage
 
+      # Skipped rather than failed when there is no token, so a pull request
+      # raised from a fork still gets a green tick from the tests above.
       - name: SonarCloud scan
+        if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@v8
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
