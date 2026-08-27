@@ -1,9 +1,6 @@
 name: SonarCloud
 
 on:
-  # Any branch, because the analysis has to run on the fork where the token
-  # lives. A pull request into the upstream repo runs there instead, and
-  # GitHub does not hand a fork's pull request the base repo's secrets.
   push:
   pull_request:
 
@@ -17,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Sonar needs the history to work out which code is new
+          # sonar needs the history to work out what is new
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -32,11 +29,9 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      # npm install, not npm ci. oxlint depends on optional wasm bindings
-      # whose nested @emnapi versions npm resolves differently on linux than
-      # on windows, so no single lockfile satisfies npm ci on both. Pinning
-      # them with an override was tried and did not help. The backend has no
-      # such dependency and still uses npm ci.
+      # npm install because oxlint's optional wasm bindings resolve to
+      # different @emnapi versions on linux than on windows, so npm ci cannot
+      # match the lockfile on both
       - name: Install frontend
         working-directory: frontend
         run: npm install --no-audit --no-fund
@@ -49,8 +44,8 @@ jobs:
         working-directory: frontend
         run: npm run test:coverage
 
-      # Skipped rather than failed when there is no token, so a pull request
-      # raised from a fork still gets a green tick from the tests above.
+      # a pull request from a fork does not get the secret, so skip rather
+      # than fail
       - name: SonarCloud scan
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@v8
