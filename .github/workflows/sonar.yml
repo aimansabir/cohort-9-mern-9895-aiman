@@ -8,14 +8,19 @@ jobs:
   analyse:
     name: Tests and analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # only whether the token exists, so the install and test steps never
+      # see the token itself
+      HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           # sonar needs the history to work out what is new
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -47,5 +52,7 @@ jobs:
       # a pull request from a fork does not get the secret, so skip rather
       # than fail
       - name: SonarCloud scan
-        if: env.SONAR_TOKEN != ''
+        if: env.HAS_SONAR_TOKEN == 'true'
         uses: SonarSource/sonarqube-scan-action@v8
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
