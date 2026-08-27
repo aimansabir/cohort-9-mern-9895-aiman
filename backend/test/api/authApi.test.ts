@@ -57,17 +57,19 @@ describe('auth API', () => {
     });
 
     it('turns down a weak password', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/api/auth/signup')
-        .send({ name: 'Aiman', email: 'aiman@example.com', password: 'short' })
-        .expect(400);
+        .send({ name: 'Aiman', email: 'aiman@example.com', password: 'short' });
+
+      expect(response.status).to.equal(400);
     });
 
     it('turns down an email that is not an email', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/api/auth/signup')
-        .send({ name: 'Aiman', email: 'not-an-email', password: PASSWORD })
-        .expect(400);
+        .send({ name: 'Aiman', email: 'not-an-email', password: PASSWORD });
+
+      expect(response.status).to.equal(400);
     });
   });
 
@@ -86,10 +88,11 @@ describe('auth API', () => {
     it('refuses the wrong password', async () => {
       queueResults(rowsResult([aUser]));
 
-      await request(app)
+      const response = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'aiman@example.com', password: 'WrongPass1' })
-        .expect(401);
+        .send({ email: 'aiman@example.com', password: 'WrongPass1' });
+
+      expect(response.status).to.equal(401);
     });
 
     // Saying "no such user" would tell someone which emails are registered
@@ -118,17 +121,20 @@ describe('auth API', () => {
     });
 
     it('refuses without a token', async () => {
-      await request(app).get('/api/auth/me').expect(401);
+      const response = await request(app).get('/api/auth/me');
+
+      expect(response.status).to.equal(401);
     });
 
     // The token can outlive the account it points at
     it('refuses a token for a user who is gone', async () => {
       queueResults(rowsResult([]));
 
-      await request(app)
+      const response = await request(app)
         .get('/api/auth/me')
-        .set('Authorization', `Bearer ${signAccessToken(999)}`)
-        .expect(401);
+        .set('Authorization', `Bearer ${signAccessToken(999)}`);
+
+      expect(response.status).to.equal(401);
     });
   });
 
@@ -136,14 +142,17 @@ describe('auth API', () => {
     it('accepts a signed in caller', async () => {
       queueResults(rowsResult([aUser]));
 
-      await request(app)
+      const response = await request(app)
         .post('/api/auth/logout')
-        .set('Authorization', `Bearer ${signAccessToken(5)}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${signAccessToken(5)}`);
+
+      expect(response.status).to.equal(200);
     });
 
     it('refuses without a token', async () => {
-      await request(app).post('/api/auth/logout').expect(401);
+      const response = await request(app).post('/api/auth/logout');
+
+      expect(response.status).to.equal(401);
     });
   });
 });

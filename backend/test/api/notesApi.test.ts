@@ -31,18 +31,23 @@ describe('notes API', () => {
 
   describe('without a token', () => {
     it('refuses to list notes', async () => {
-      await request(app).get('/api/notes').expect(401);
+      const response = await request(app).get('/api/notes');
+
+      expect(response.status).to.equal(401);
     });
 
     it('refuses to create a note', async () => {
-      await request(app).post('/api/notes').send({ title: 'x', content: '' }).expect(401);
+      const response = await request(app).post('/api/notes').send({ title: 'x', content: '' });
+
+      expect(response.status).to.equal(401);
     });
 
     it('refuses a token that is not really signed', async () => {
-      await request(app)
+      const response = await request(app)
         .get('/api/notes')
-        .set('Authorization', 'Bearer not.a.real.token')
-        .expect(401);
+        .set('Authorization', 'Bearer not.a.real.token');
+
+      expect(response.status).to.equal(401);
     });
   });
 
@@ -62,7 +67,9 @@ describe('notes API', () => {
     it('scopes the query to the user in the token', async () => {
       queueResults(rowsResult([]));
 
-      await request(app).get('/api/notes').set('Authorization', auth).expect(200);
+      const response = await request(app).get('/api/notes').set('Authorization', auth);
+
+      expect(response.status).to.equal(200);
 
       expect(queries[0]?.params).to.deep.equal({ userId: 5 });
     });
@@ -94,11 +101,12 @@ describe('notes API', () => {
     // A body key nobody asked for is a mistake worth reporting, not something
     // to quietly accept
     it('turns down a body with an unexpected key', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/api/notes')
         .set('Authorization', auth)
-        .send({ title: 'x', content: '', userId: 99 })
-        .expect(400);
+        .send({ title: 'x', content: '', userId: 99 });
+
+      expect(response.status).to.equal(400);
     });
   });
 
@@ -106,11 +114,15 @@ describe('notes API', () => {
     it('answers 404 for a note the caller does not own', async () => {
       queueResults(rowsResult([]));
 
-      await request(app).get('/api/notes/1').set('Authorization', auth).expect(404);
+      const response = await request(app).get('/api/notes/1').set('Authorization', auth);
+
+      expect(response.status).to.equal(404);
     });
 
     it('answers 400 for an id that is not a number', async () => {
-      await request(app).get('/api/notes/abc').set('Authorization', auth).expect(400);
+      const response = await request(app).get('/api/notes/abc').set('Authorization', auth);
+
+      expect(response.status).to.equal(400);
     });
   });
 
@@ -128,7 +140,9 @@ describe('notes API', () => {
     });
 
     it('turns down a body that asks for nothing', async () => {
-      await request(app).patch('/api/notes/1').set('Authorization', auth).send({}).expect(400);
+      const response = await request(app).patch('/api/notes/1').set('Authorization', auth).send({});
+
+      expect(response.status).to.equal(400);
     });
   });
 
@@ -136,13 +150,17 @@ describe('notes API', () => {
     it('deletes and answers 200', async () => {
       queueResults(writeResult({ affectedRows: 1 }));
 
-      await request(app).delete('/api/notes/1').set('Authorization', auth).expect(200);
+      const response = await request(app).delete('/api/notes/1').set('Authorization', auth);
+
+      expect(response.status).to.equal(200);
     });
 
     it('answers 404 when there was nothing to delete', async () => {
       queueResults(writeResult({ affectedRows: 0 }));
 
-      await request(app).delete('/api/notes/1').set('Authorization', auth).expect(404);
+      const response = await request(app).delete('/api/notes/1').set('Authorization', auth);
+
+      expect(response.status).to.equal(404);
     });
   });
 
