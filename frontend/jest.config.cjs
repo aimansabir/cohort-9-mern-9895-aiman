@@ -3,6 +3,16 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  // Without this Jest only counts the files a test happened to import, which
+  // reports a flattering number that says nothing about the untested ones.
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.test.{ts,tsx}',
+    '!src/test/**',
+    '!src/main.tsx',
+    '!src/vite-env.d.ts',
+  ],
+  coverageReporters: ['text-summary', 'lcov'],
   moduleNameMapper: {
     // config/env reads import.meta, which Jest cannot parse, so tests get a
     // plain stand in for it

@@ -32,7 +32,11 @@ async function runMigrations(): Promise<void>  {
     const appliedNames = appliedRows.map((row) => row.name);
 
     const allFiles = await readdir(MIGRATIONS_DIR);
-    const migrationFiles = allFiles.filter((file) => file.endsWith('.sql')).sort();
+    // Migrations have to run in file name order, so the comparison is spelled
+    // out rather than leaning on the default sort.
+    const migrationFiles = allFiles
+      .filter((file) => file.endsWith('.sql'))
+      .sort((a, b) => a.localeCompare(b));
     const pendingFiles = migrationFiles.filter((file) => !appliedNames.includes(file));
 
     if (pendingFiles.length === 0) {

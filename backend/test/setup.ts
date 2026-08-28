@@ -2,7 +2,9 @@
 // missing, so they are set here rather than relying on a local .env file
 // that will not exist on someone else's machine or in CI.
 process.env['NODE_ENV'] = 'test';
-process.env['LOG_LEVEL'] = 'error';
+// fatal, because several tests make the server fail on purpose and the stack
+// traces would otherwise bury the test output
+process.env['LOG_LEVEL'] = 'fatal';
 
 // none of these are real credentials, they only have to satisfy the
 // shape checks in env.ts
