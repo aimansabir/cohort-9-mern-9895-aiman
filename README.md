@@ -119,14 +119,15 @@ It runs on http://localhost:5173.
 ## Tests
 
 ```bash
-cd backend  && npm test          # 159 tests
-cd frontend && npm test          # 223 tests
+cd backend
+npm test              # 159 tests
+npm run test:coverage # with coverage
 ```
 
-With coverage:
-
 ```bash
-npm run test:coverage
+cd frontend
+npm test              # 223 tests
+npm run test:coverage # with coverage
 ```
 
 The backend tests replace the database connection with a stub, so they run
@@ -173,7 +174,7 @@ Screenshots and the full numbers are in [SonarQubeReport](SonarQubeReport).
 
 ## Layout
 
-```
+```text
 backend/
   db/migrations/     numbered SQL files, run by npm run migrate
   src/
